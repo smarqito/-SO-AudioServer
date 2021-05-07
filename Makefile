@@ -34,10 +34,10 @@ bin/aurrasd: $(OBJ)/aurrasd.o
 $(OBJ)/aurrasd.o: $(SSERVER)/aurrasd.c
     $(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJ)/aurras.o: $(SCLIENT)/aurras.c
+bin/aurras: $(OBJ)/aurras.o
     $(CC) $(CFLAGS) -c $< -o $@
 
-bin/aurras: $(OBJ)/aurras.o
+$(OBJ)/aurras.o: $(SCLIENT)/aurras.c
     $(CC) $(CFLAGS) -c $< -o $@
 
 clean:
