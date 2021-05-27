@@ -24,11 +24,11 @@ SCLIENT=$(SDIR)/client
 
 all: server client
 
-server: bin/aurrasd
+server: $(BDIR)/aurrasd
 
-client: bin/aurras
+client: $(BDIR)/aurras
 
-bin/aurrasd: $(OBJ)/aurrasd.o
+$(BDIR)/aurrasd: $(OBJ)/aurrasd.o
     $(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJ)/aurrasd.o: $(SSERVER)/aurrasd.c
