@@ -14,7 +14,7 @@ int main(int argc, int *argv[]) {
   char buffer[BUFFER_SIZE];
   char command[BUFFER_SIZE+50];
 
-  if ((fd = open("REQUEST_PIPE", O_WRONLY)) < 0)
+  if ((fd = open(REQUEST_PIPE, O_WRONLY)) < 0)
   {
     perror("error fifo write");
   }

@@ -5,9 +5,9 @@
 #include "dup_aux.h"
 
 
-void create_fifo()
+void create_fifo(char *filename)
 {
-  if (mkfifo(REQUEST_PIPE, 0666) == -1)
+  if (mkfifo(filename, 0666) == -1)
   {
     perror("error creating fifo.");
   }
@@ -22,11 +22,11 @@ void open_dup(char *name, int flag, mode_t mode, int dt)
   int fd;
   if ((fd = open(name, flag, mode)) < 0)
   {
-    perror("error reading fifo");
+    perror("error");
   }
   else
   {
-    printf("[debug] fifo file opened for reading\n");
+    printf("[debug] opened file %s\n", name);
   }
   dup2(fd, dt);
   close(fd);
