@@ -32,6 +32,7 @@ struct config
 struct config_server
 {
     Config *config;
+    char *configFolder;
     int total;
     int size;
 } CSNode;
@@ -72,6 +73,22 @@ Config init_config(char *line)
     tmp_c->current = 0;
     tmp_c->max = atoi(tmp[2]);
     return tmp_c;
+}
+
+char *get_filters_folder(Config_Server cs)
+{
+    if (cs)
+    {
+        return strdup(cs->configFolder);
+    }
+}
+
+void set_filters_folder(Config_Server cs, char *file)
+{
+    if (cs)
+    {
+        cs->configFolder = strdup(file);
+    }
 }
 
 int has_filter(Config_Server cs, char *filter)

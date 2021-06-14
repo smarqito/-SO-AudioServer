@@ -10,46 +10,17 @@
 
 #define BUFFER_SIZE 4096 // 4 KB
 
-static char CONFIG[5][4][30];
-
 void term_sig(int signal)
 {
   printf("good bye\n");
   _exit(0);
 }
 
-void parseConfigLines(int fd)
-{
-  char buffer[BUFFER_SIZE];
-  int bytes_read;
-  char *helper, *token;
-  int config_line = 0;
-  int i;
-  while ((bytes_read = readln(fd, buffer, BUFFER_SIZE)) > 0)
-  {
-    printf("cá dentro \n");
-    write(1, buffer, bytes_read);
-    for (i = 0, helper = buffer; i < 3; i++, helper = NULL)
-    {
-      token = strtok(helper, " \n");
-      if (token == NULL)
-      {
-        break;
-      }
-      strcpy(CONFIG[config_line][i], token);
-    }
-    config_line++;
-  }
-}
-
-int main(int argc, int *argv[])
+int main(int argc, char *argv[])
 {
   signal(SIGTERM, term_sig);
 
-  int fd_s, fd_c;
-  int log;
-  int err;
-  int config;
+  int fd_c;
   int bytes_read;
   char buffer[BUFFER_SIZE];
   // create_fifo(CLIENT_PIPE);
@@ -58,26 +29,10 @@ int main(int argc, int *argv[])
   open_dup(ERR_FILE, O_CREAT | O_APPEND | O_WRONLY, 0666, STDERR_FILENO); // ficheiro de erros
 
   create_fifo(REQUEST_PIPE);
-  if ((config = open("../etc/aurrasd.conf", O_RDONLY)) < 0)
-  {
-    perror("config file");
-  }
-  else
-  {
-    parseConfigLines(config);
-  }
-
-  for (int i = 0; i < 5; i++)
-  {
-    for (int j = 0; j < 4; j++)
-    {
-      printf("%s cenas \n", CONFIG[i][j]);
-    }
-  }
 
   open_dup(REQUEST_PIPE, O_RDONLY, 0, STDIN_FILENO); // STDIN passa a ser o PIPE
 
-  if ((fd_c = open(REQUEST_PIPE, O_WRONLY)) < 0)
+  if ((fd_c = open(REQUEST_PIPE, O_WRONLY)) < 0) // bloqueia o descritor de escrita; servidor sempre a correr
   {
     perror("error fifo write");
   }

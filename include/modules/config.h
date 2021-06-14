@@ -20,6 +20,22 @@ typedef struct config_server *Config_Server;
 Config_Server init_config_server();
 
 /**
+ * @brief Devolve a pasta dos filtros
+ * 
+ * @param cs Configuração do servidor
+ * @return char* Path dos filtros
+ */
+char *get_filters_folder(Config_Server cs);
+
+/**
+ * @brief Define a path para os filtros
+ * 
+ * @param cs Configuração do servidor
+ * @param file Path da folder dos filtros
+ */
+void set_filters_folder(Config_Server cs, char *file);
+
+/**
  * @brief Verifica se um filtro existe na configuração do server
  * 
  * @param cs Config_Server
