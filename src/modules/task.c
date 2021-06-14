@@ -105,6 +105,15 @@ Task init_task(char *request)
     return new;
 }
 
+char *get_task_pid(Task t)
+{
+    if (t)
+    {
+        return strdup(t->pid);
+    }
+    return NULL;
+}
+
 char *get_input_file(Task t)
 {
     if (t)
@@ -179,8 +188,12 @@ void show_task(Task t)
 {
     if (t)
     {
+        char tmp[50];
         write(STDOUT_FILENO, t->request, strlen(t->request));
-        fflush(NULL);
+        sprintf(tmp, " status: %d ", get_task_status(t));
+        write(STDOUT_FILENO, tmp, strlen(tmp));
+
+        // fflush(NULL);
         // printf("pid: %d; input: %s; output: %s; filters: ",atoi(t->pid), get_input_file(t), get_output_file(t));
         // show_filters(t->filters);
     }

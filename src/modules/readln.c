@@ -9,7 +9,6 @@
 char read_buffer[BUFFER_SIZE];
 int read_buffer_pos = 0;
 int read_buffer_end = 0;
-static char CONFIG[5][4][30];
 
 
 
@@ -45,6 +44,7 @@ ssize_t readln(int fd, char *line, size_t size)
             return i;
         }
     }
+    return 0;
 }
 
 /**

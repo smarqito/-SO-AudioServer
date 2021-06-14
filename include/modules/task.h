@@ -7,6 +7,7 @@ typedef enum taskstatus
 {
     PENDING,
     WAITING,
+    PROCESSING,
     FINISHED,
     ERROR
 } Status;
@@ -18,6 +19,14 @@ typedef enum taskstatus
  * @return Task Tarefa inicializada
  */
 Task init_task(char *request);
+
+/**
+ * @brief Retorna o pid do cliente que pediu a tarefa
+ * 
+ * @param t Tarefa
+ * @return char* Pid
+ */
+char *get_task_pid(Task t);
 
 /**
  * @brief Retorna o path para o ficheiro de input
