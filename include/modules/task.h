@@ -29,6 +29,14 @@ Task init_task(char *request);
 char *get_task_pid(Task t);
 
 /**
+ * @brief Retorna o comando a ser executado: [status, transform]
+ * 
+ * @param t Task
+ * @return char* Comando, caso esteja definido!
+ */
+char *get_task_command(Task t);
+
+/**
  * @brief Retorna o path para o ficheiro de input
  * 
  * @param t Tarefa

@@ -29,7 +29,7 @@ Queue init_queue()
     new->total = 0;
     new->current = 0;
     new->pending = 0;
-    new->size = 5;
+    new->size = MAX_TASKS;
     new->tasks = malloc(sizeof(Task *) * MAX_TASKS);
     for (int i = 0; i < MAX_TASKS; i++)
     {

@@ -20,7 +20,7 @@ int readc(int fd, char *c)
         switch (read_buffer_end)
         {
         case -1:
-            perror("read");
+            perror("read_line");
             break;
         case 0:
             return 0;

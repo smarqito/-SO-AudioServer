@@ -244,7 +244,22 @@ void show_config(Config c)
 {
     if (c)
     {
-        printf("%s %s %d %d\n", c->filter, c->file_name, c->current, c->max);
+        printf("%s %s: %d/%d (current/max)\n", c->filter, c->file_name, c->current, c->max);
+    }
+}
+
+void show_config_status(Config_Server cs)
+{
+    if (cs)
+    {
+        char tmp[200];
+        sprintf(tmp, "path filtros: %s\n", get_filters_folder(cs));
+        write(STDOUT_FILENO, tmp, strlen(tmp));
+
+        for (int i = 0; i < cs->total; i++)
+        {
+            show_config(cs->config[i]);
+        }
     }
 }
 

@@ -13,7 +13,7 @@ void create_fifo(char *filename)
   }
   else
   {
-    printf("[debug] fifo file created\n");
+    printf("[debug] fifo %s file created\n", filename);
   }
 }
 

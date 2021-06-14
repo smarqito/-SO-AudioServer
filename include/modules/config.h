@@ -11,7 +11,6 @@
  */
 typedef struct config_server *Config_Server;
 
-
 /**
  * @brief Inicializa uma configuração de servidor com espaço para 2 filtros
  * 
@@ -99,5 +98,12 @@ int parseConfigLines(int fd, Config_Server cs);
  * @return char* Nome do ficheiro a ser utilizado no exec
  */
 char *get_filter_file(Config_Server cs, char *filter);
+
+/**
+ * @brief Mostra o estado da configuração do servidor
+ * 
+ * @param c 
+ */
+void show_config_status(Config_Server cs);
 
 #endif

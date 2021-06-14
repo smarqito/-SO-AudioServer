@@ -12,7 +12,7 @@
  * @brief Create a fifo object
  * 
  */
-void create_fifo();
+void create_fifo(char *filename);
 
 /**
  * @brief Abre um ficheiro / FIFO, utilizando as flags

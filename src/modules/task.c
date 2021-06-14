@@ -26,6 +26,7 @@ typedef struct filters
 struct task
 {
     char *request;
+    char *command;
     char *pid;
     Status status;
     char *input_file;
@@ -90,6 +91,7 @@ Task init_task(char *request)
             new->pid = strdup(token);
             break;
         case 1:
+            new->command = strdup(token);
             break;
         case 2:
             new->input_file = strdup(token);
@@ -103,6 +105,15 @@ Task init_task(char *request)
         }
     }
     return new;
+}
+
+char *get_task_command(Task t)
+{
+    if (t)
+    {
+        return strdup(t->command);
+    }
+    return NULL;
 }
 
 char *get_task_pid(Task t)
@@ -189,8 +200,26 @@ void show_task(Task t)
     if (t)
     {
         char tmp[50];
-        write(STDOUT_FILENO, t->request, strlen(t->request));
-        sprintf(tmp, " status: %d ", get_task_status(t));
+        int pid_size = strlen(get_task_pid(t)) + 1;
+        write(STDOUT_FILENO, t->request + pid_size, strlen(t->request + pid_size));
+        switch (get_task_status(t))
+        {
+        case PENDING:
+            sprintf(tmp, " %s", "PENDING");
+            break;
+        case WAITING:
+            sprintf(tmp, " %s", "WAITING");
+            break;
+        case PROCESSING:
+            sprintf(tmp, " %s", "PROCESSING");
+            break;
+        case FINISHED:
+            sprintf(tmp, " %s", "FINISHED");
+            break;
+        
+        default:
+            break;
+        }
         write(STDOUT_FILENO, tmp, strlen(tmp));
 
         // fflush(NULL);
