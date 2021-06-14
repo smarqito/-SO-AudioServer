@@ -3,6 +3,14 @@
 
 typedef struct task *Task;
 
+typedef enum taskstatus
+{
+    PENDING,
+    WAITING,
+    FINISHED,
+    ERROR
+} Status;
+
 /**
  * @brief Inicializa uma tarefa
  * 
@@ -42,6 +50,22 @@ char *get_current_filter(Task t);
  * @return char* Nome do filtro
  */
 char *get_next_filter(Task t);
+
+/**
+ * @brief Retorna o estado de uma tarefa
+ * 
+ * @param t Tarefa
+ * @return Status Estado
+ */
+Status get_task_status(Task t);
+
+/**
+ * @brief Define o estado de uma tarefa
+ * 
+ * @param t Tarefa
+ * @param status Estado
+ */
+void set_task_status(Task t, Status status);
 
 /**
  * @brief Print da tarefa

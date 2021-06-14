@@ -27,6 +27,7 @@ struct task
 {
     char *request;
     char *pid;
+    Status status;
     char *input_file;
     char *output_file;
     Filters filters;
@@ -75,6 +76,7 @@ Task init_task(char *request)
     Task new = malloc(sizeof(TNode));
     new->filters = init_filters();
     new->request = strdup(request);
+    new->status = PENDING;
     int i;
     char *str, *token;
     for (i = 0, str = request;; i++, str = NULL)
@@ -145,6 +147,23 @@ char *get_next_filter(Task t)
         }
     }
     return NULL;
+}
+
+Status get_task_status(Task t)
+{
+    if (t)
+    {
+        return t->status;
+    }
+    return ERROR;
+}
+
+void set_task_status(Task t, Status status)
+{
+    if (t)
+    {
+        t->status = status;
+    }
 }
 
 void show_filters(Filters f)

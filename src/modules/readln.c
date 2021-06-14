@@ -47,6 +47,10 @@ ssize_t readln(int fd, char *line, size_t size)
     }
 }
 
+/**
+ * @brief Debug area
+ * 
+ */
 // void parseConfigLines(int fd)
 // {
 //     char buffer[BUFFER_SIZE];
