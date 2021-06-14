@@ -2,7 +2,7 @@
 #define DUP_AUX_H
 
 #define REQUEST_PIPE "SERVER_REQUEST"
-#define CLIENT_PIPE "SERVER_ANSWER"
+#define POOL_PIPE "POOL"
 
 #define LOG_FILE "logger.log"
 #define ERR_FILE "errors.log"

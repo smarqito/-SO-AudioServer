@@ -87,3 +87,12 @@ int pool(char *config_file, char *filter_folder)
 
     return 0;
 }
+
+int main(int argc, char const *argv[])
+{
+    if (argc == 3)
+    {
+        pool(argv[1], argv[2]);
+    }
+    return 0;
+}

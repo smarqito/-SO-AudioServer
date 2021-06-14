@@ -23,25 +23,22 @@ int main(int argc, char *argv[])
 
   int fd_c;
   int bytes_read;
-  int p[2];
   char buffer[BUFFER_SIZE];
   // create_fifo(CLIENT_PIPE);
   if (argc == 3) // execute server
   {
-    if (pipe(p) < 0)
-    {
-      perror("pipe error");
-    }
+
+    create_fifo(POOL_PIPE);
 
     if (fork() == 0) // create thread pool
     {
-      close(p[1]);
-      dup2(p[0], STDIN_FILENO);
-      pool(argv[1], argv[2]);
+      open_dup(POOL_PIPE, O_RDONLY, 0666, STDIN_FILENO);
+      int status = execl("./pool", "pool", argv[1], argv[2], NULL);
+      _exit(status);
     }
     else
     {
-      open_dup(LOG_FILE, O_CREAT | O_APPEND | O_WRONLY, 0666, STDOUT_FILENO); // ficheiro de log
+      //open_dup(LOG_FILE, O_CREAT | O_APPEND | O_WRONLY, 0666, STDOUT_FILENO); // ficheiro de log
       open_dup(ERR_FILE, O_CREAT | O_APPEND | O_WRONLY, 0666, STDERR_FILENO); // ficheiro de erros
 
       create_fifo(REQUEST_PIPE);
@@ -56,9 +53,9 @@ int main(int argc, char *argv[])
       {
         printf("[debug] fifo file opened for writing\n");
       }
-      close(p[0]);
-      dup2(p[1], STDOUT_FILENO);
-      
+
+      open_dup(POOL_PIPE, O_WRONLY, 0666, STDOUT_FILENO);
+
       char exit_[5];
       while ((bytes_read = read(STDIN_FILENO, buffer, BUFFER_SIZE)) > 0)
       {
