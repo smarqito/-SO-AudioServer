@@ -1,3 +1,13 @@
+/**
+ * @file task.c
+ * @author Marco Sousa (a62608@alumni.uminho.pt)
+ * @brief Módulo para apoio na gestão de tarefas
+ * @version 0.1
+ * @date 2021-06-14
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -42,7 +52,7 @@ void resizeFilters(Filters f)
     {
         new[i] = filters[i];
     }
-    for (i; i < (f->size * 2); i++)
+    for (; i < (f->size * 2); i++)
     {
         new[i] = NULL;
     }
@@ -51,7 +61,7 @@ void resizeFilters(Filters f)
     free(filters);
 }
 
-void add_filter(Filters f, char *filter)
+void add_task_filter(Filters f, char *filter)
 {
     if (f->num_filters == f->size)
     {
@@ -86,7 +96,7 @@ Task init_task(char *request)
             new->output_file = strdup(token);
             break;
         default:
-            add_filter(new->filters, token);
+            add_task_filter(new->filters, token);
             break;
         }
     }
@@ -157,6 +167,10 @@ void show_task(Task t)
     }
 }
 
+/**
+ * @brief Debug area
+ * 
+ */
 // int main(int argc, char const *argv[])
 // {
 //     char teste[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";

@@ -1,3 +1,13 @@
+/**
+ * @file queue.c
+ * @author Marco Sousa (a62608@alumni.uminho.pt)
+ * @brief Módulo para gestão de tarefas sob a forma de queue (FCFS)
+ * @version 0.1
+ * @date 2021-06-14
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -68,26 +78,30 @@ void show_queue(Queue q)
     }
 }
 
-int main(int argc, char const *argv[])
-{
-    char teste[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
-    char teste1[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
-    char teste2[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
-    char teste3[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
-    char teste4[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
-    char teste5[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
-    char teste6[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
-    Queue q = init_queue();
-    add_task(q, teste);
-    add_task(q, teste1);
-    add_task(q, teste2);
-    add_task(q, teste3);
-    add_task(q, teste4);
-    add_task(q, teste5);
-    add_task(q, teste6);
-    show_queue(q);
-    show_task(get_next_task(q));
-    write(STDOUT_FILENO, "\n", 1);
-    show_queue(q);
-    return 0;
-}
+/**
+ * @brief Debug area
+ * 
+ */
+// int main(int argc, char const *argv[])
+// {
+//     char teste[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
+//     char teste1[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
+//     char teste2[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
+//     char teste3[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
+//     char teste4[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
+//     char teste5[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
+//     char teste6[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
+//     Queue q = init_queue();
+//     add_task(q, teste);
+//     add_task(q, teste1);
+//     add_task(q, teste2);
+//     add_task(q, teste3);
+//     add_task(q, teste4);
+//     add_task(q, teste5);
+//     add_task(q, teste6);
+//     show_queue(q);
+//     show_task(get_next_task(q));
+//     write(STDOUT_FILENO, "\n", 1);
+//     show_queue(q);
+//     return 0;
+// }

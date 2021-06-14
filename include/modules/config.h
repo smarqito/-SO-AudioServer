@@ -69,7 +69,7 @@ int add_inuse_process(Config_Server cs, char *filter);
  * @param filter Filtro
  * @return int >= 0 se processo existir; -1 caso contrário
  */
-int get_current_filter(Config_Server cs, char *filter);
+int get_inuse_filter(Config_Server cs, char *filter);
 
 /**
  * @brief Adiciona um novo filtro, utilizando uma linha com formato:

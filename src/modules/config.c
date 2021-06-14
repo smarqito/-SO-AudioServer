@@ -1,3 +1,13 @@
+/**
+ * @file config.c
+ * @author Marco Sousa (a62608@alumni.uminho.pt)
+ * @brief Módulo para gestão da configuração do servidor
+ * @version 0.1
+ * @date 2021-06-14
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -81,6 +91,7 @@ char *get_filters_folder(Config_Server cs)
     {
         return strdup(cs->configFolder);
     }
+    return NULL;
 }
 
 void set_filters_folder(Config_Server cs, char *file)
@@ -150,7 +161,7 @@ int add_inuse_process(Config_Server cs, char *filter)
     return 0;
 }
 
-int get_current_filter(Config_Server cs, char *filter)
+int get_inuse_filter(Config_Server cs, char *filter)
 {
     if (cs)
     {
@@ -237,6 +248,10 @@ void show_config(Config c)
     }
 }
 
+/**
+ * @brief Debug area
+ * 
+ */
 // int main(int argc, char const *argv[])
 // {
 //     int config;
