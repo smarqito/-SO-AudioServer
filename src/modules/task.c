@@ -81,14 +81,14 @@ void set_task_filter_counter(Filters f)
 {
     int j, k, i;
     int num_filters = f->num_filters;
-    char *filters_set = malloc(sizeof(char) * num_filters);
+    char **filters_set = malloc(sizeof(char *) * num_filters);
     int *filters_counter = malloc(sizeof(int) * num_filters);
     for (i = 0, j = 0; i < num_filters; i++)
     {
-        for (k = 0; k < j && strcmp(filters_set[k], f->filters[i]); k++)
+        for (k = 0; k < j && strcmp(filters_set[k], f->filters[i]) != 0; k++)
             ;
 
-        if (k != j)
+        if (k == j)
         {
             filters_set[k] = f->filters[i];
             filters_counter[k] = 1;
@@ -110,6 +110,7 @@ char **get_task_filter_set(Task t)
     {
         return t->filters->filters_set;
     }
+    return NULL;
 }
 
 int *get_task_filter_counter(Task t)
@@ -118,6 +119,7 @@ int *get_task_filter_counter(Task t)
     {
         return t->filters->filters_count;
     }
+    return NULL;
 }
 
 int get_task_filter_size(Task t)
@@ -126,6 +128,7 @@ int get_task_filter_size(Task t)
     {
         return t->filters->num_filters_set;
     }
+    return 0;
 }
 
 Task init_task(char *request)
@@ -336,7 +339,7 @@ void show_task(Task t)
  */
 // int main(int argc, char const *argv[])
 // {
-//     char teste[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
+//     char teste[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3 filter1";
 //     Task t = init_task(teste);
 //     show_task(t);
 //     char *task_t;

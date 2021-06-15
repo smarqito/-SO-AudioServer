@@ -51,6 +51,8 @@ int can_execute(Task t)
     int *counter = get_task_filter_counter(t);
     int num = get_task_filter_size(t);
     int i;
+    printf("numero de filtros: %d\n",num);
+    fflush(NULL);
     for (i = 0; i < num && is_filter_available(cs, filtros[i], counter[i]); i++)
         ;
 
@@ -72,6 +74,7 @@ void load_config(Pool p, char *config_file, char *filters_folder)
 
 int has_available_resources(Config_Server cs, Task t)
 {
+    return 1;
 }
 
 void handle_pool(Pool pool)
@@ -79,7 +82,7 @@ void handle_pool(Pool pool)
     Task t = get_next_task(pool->queue);
     int pid;
     int status = 0;
-    if (t)
+    if (t && can_execute(t))
     {
         set_task_status(t, PROCESSING);
         switch ((pid = fork()))
@@ -105,6 +108,8 @@ void handle_pool(Pool pool)
             set_task_executer(t, pid);
             break;
         }
+    } else {
+        printf("não tenho recursos\n");
     }
 }
 
