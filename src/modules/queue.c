@@ -38,7 +38,7 @@ Queue init_queue()
     return new;
 }
 
-int add_task(Queue q, char *request)
+int add_task(Queue q, Task t)
 {
     if (q && q->total < q->size)
     {
@@ -47,7 +47,8 @@ int add_task(Queue q, char *request)
         for (int j = 0; tmp && j < q->size; j++)
             tmp = q->tasks[++i % q->size];
 
-        Task t = init_task(request);
+        //Task t = init_task(request);
+
         q->tasks[i % q->size] = t;
         q->pending++;
         q->total++;

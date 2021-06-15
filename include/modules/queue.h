@@ -23,7 +23,7 @@ Queue init_queue();
  * @return int 0 se não foi possível inserir: queue cheia ou não inicializada
  *         1 caso contrário
  */
-int add_task(Queue q, char *request);
+int add_task(Queue q, Task request);
 
 /**
  * @brief Retorna a próxima tarefa a ser executada

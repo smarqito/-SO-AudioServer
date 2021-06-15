@@ -38,7 +38,7 @@ client: bin/aurras
 bin/aurrasd: obj/aurrasd.o obj/dup_aux.o obj/readln.o
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@
 
-bin/pool: obj/pool.o obj/dup_aux.o obj/config.o obj/queue.o obj/readln.o obj/task.o
+bin/pool: obj/pool.o obj/dup_aux.o obj/config.o obj/queue.o obj/readln.o obj/task.o obj/exec_helper.o
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@
 
 obj/aurrasd.o: $(SSERVER)/aurrasd.c obj/dup_aux.o obj/readln.o obj/pool.o
@@ -65,7 +65,10 @@ obj/task.o: $(SMODULES)/task.c $(IMODULES)/task.h
 obj/queue.o: $(SMODULES)/queue.c $(IMODULES)/queue.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-obj/pool.o: $(SMODULES)/pool.c $(IMODULES)/pool.h obj/queue.o obj/dup_aux.o
+obj/pool.o: $(SMODULES)/pool.c $(IMODULES)/pool.h obj/queue.o obj/dup_aux.o obj/exec_helper.o
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+obj/exec_helper.o: $(SMODULES)/exec_helper.c $(IMODULES)/exec_helper.h obj/task.o obj/dup_aux.o obj/config.o
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:

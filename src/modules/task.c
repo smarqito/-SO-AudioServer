@@ -14,13 +14,17 @@
 #include <unistd.h>
 #include <string.h>
 #include "task.h"
+#include "dup_aux.h"
 
 typedef struct filters
 {
-    char **filters;
-    int size; // size of array
+    char **filters; // filtros com a ordem pedida pelo utilizador
+    int size;       // size of array
     int num_filters;
     int current_filter;
+    char **filters_set; // set de filtros (sem repetições)
+    int *filters_count; // lista de contadores (relacionado com filtro)
+    int num_filters_set;
 } * Filters, FNode;
 
 struct task
@@ -48,20 +52,20 @@ Filters init_filters()
 
 void resizeFilters(Filters f)
 {
-    char **new = malloc(sizeof(char *) * f->size * 2);
-    char **filters = f->filters;
+    char **new_filters = malloc(sizeof(char *) * f->size * 2);
+    char **old_filters = f->filters;
     int i;
     for (i = 0; i < f->size; i++)
     {
-        new[i] = filters[i];
+        new_filters[i] = old_filters[i];
     }
     for (; i < (f->size * 2); i++)
     {
-        new[i] = NULL;
+        new_filters[i] = NULL;
     }
-    f->filters = new;
+    f->filters = new_filters;
     f->size *= 2;
-    free(filters);
+    free(old_filters);
 }
 
 void add_task_filter(Filters f, char *filter)
@@ -71,6 +75,57 @@ void add_task_filter(Filters f, char *filter)
         resizeFilters(f);
     }
     f->filters[f->num_filters++] = strdup(filter);
+}
+
+void set_task_filter_counter(Filters f)
+{
+    int j, k, i;
+    int num_filters = f->num_filters;
+    char *filters_set = malloc(sizeof(char) * num_filters);
+    int *filters_counter = malloc(sizeof(int) * num_filters);
+    for (i = 0, j = 0; i < num_filters; i++)
+    {
+        for (k = 0; k < j && strcmp(filters_set[k], f->filters[i]); k++)
+            ;
+
+        if (k != j)
+        {
+            filters_set[k] = f->filters[i];
+            filters_counter[k] = 1;
+            j++;
+        }
+        else
+        {
+            filters_counter[k]++;
+        }
+    }
+    f->filters_set = filters_set;
+    f->filters_count = filters_counter;
+    f->num_filters_set = j;
+}
+
+char **get_task_filter_set(Task t)
+{
+    if (t)
+    {
+        return t->filters->filters_set;
+    }
+}
+
+int *get_task_filter_counter(Task t)
+{
+    if (t)
+    {
+        return t->filters->filters_count;
+    }
+}
+
+int get_task_filter_size(Task t)
+{
+    if (t)
+    {
+        return t->filters->num_filters_set;
+    }
 }
 
 Task init_task(char *request)
@@ -95,7 +150,14 @@ Task init_task(char *request)
             new->command = strdup(token);
             break;
         case 2:
-            new->input_file = strdup(token);
+            if (!check_file_exists(token))
+            {
+                new->input_file = NULL;
+            }
+            else
+            {
+                new->input_file = strdup(token);
+            }
             break;
         case 3:
             new->output_file = strdup(token);
@@ -105,6 +167,9 @@ Task init_task(char *request)
             break;
         }
     }
+
+    set_task_filter_counter(new->filters);
+
     return new;
 }
 
@@ -145,7 +210,7 @@ char *get_task_pid(Task t)
 
 char *get_input_file(Task t)
 {
-    if (t)
+    if (t && t->input_file)
     {
         return strdup(t->input_file);
     }
@@ -161,30 +226,32 @@ char *get_output_file(Task t)
     return NULL;
 }
 
-char *get_current_filter(Task t)
+int get_current_filter(Task t, char **current)
 {
     if (t)
     {
         Filters f = t->filters;
         if (f->current_filter != f->num_filters)
         {
-            return strdup(f->filters[f->current_filter]);
+            (*current) = strdup(f->filters[f->current_filter]);
+            return f->current_filter;
         }
     }
-    return NULL;
+    return -1;
 }
 
-char *get_next_filter(Task t)
+int get_next_filter(Task t, char **next)
 {
     if (t)
     {
         Filters f = t->filters;
         if (f->current_filter != f->num_filters)
         {
-            return strdup(f->filters[f->current_filter++]);
+            (*next) = strdup(f->filters[f->current_filter++]);
+            return f->current_filter - 1;
         }
     }
-    return NULL;
+    return -1;
 }
 int get_task_total_filters(Task t)
 {
@@ -272,5 +339,11 @@ void show_task(Task t)
 //     char teste[1000] = "5869 transform <input_file> <output_file> filter1 filter2 filter3";
 //     Task t = init_task(teste);
 //     show_task(t);
+//     char *task_t;
+//     for (int j = get_next_filter(t, &task_t); j >= 0; j = get_next_filter(t, &task_t))
+//     {
+//         printf("indice atual: %d\nfiltro: %s\n", j, task_t);
+//     }
+
 //     return 0;
 // }

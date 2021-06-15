@@ -21,6 +21,30 @@ typedef enum taskstatus
 Task init_task(char *request);
 
 /**
+ * @brief Retorna o set de filtros unitários
+ * 
+ * @param t Tarefa
+ * @return char** Set de filtros isolados
+ */
+char **get_task_filter_set(Task t);
+
+/**
+ * @brief Retorna o contador de filtros necessários
+ * 
+ * @param t Tarefa
+ * @return int* Lista de contador
+ */
+int *get_task_filter_counter(Task t);
+
+/**
+ * @brief Retorna o tamanho do set de filtros
+ * 
+ * @param t Tarefa
+ * @return int Tamanho do set de filtros
+ */
+int get_task_filter_size(Task t);
+
+/**
  * @brief Retorna o pid do cliente que pediu a tarefa
  * 
  * @param t Tarefa
@@ -60,17 +84,19 @@ char *get_output_file(Task t);
  * @brief Retorna o filtro que aguarda processamento
  * 
  * @param t Tarefa
- * @return char* Filto a aguardar processamento
+ * @param current Onde vai ser armazenado o próximo filtro a executar
+ * @return índice do filtro em processamento / aguarda
  */
-char *get_current_filter(Task t);
+int get_current_filter(Task t, char **current);
 
 /**
  * @brief Retorna o próximo filtro a processar (igual ao atual mas incrementa)
  * 
  * @param t Tarefa
- * @return char* Nome do filtro
+ * @param next Onde vai ser armazenado o próximo filtro a executar
+ * @return indíce do filtro que inicia processamento
  */
-char *get_next_filter(Task t);
+int get_next_filter(Task t, char **next);
 
 /**
  * @brief Retorna o estado de uma tarefa

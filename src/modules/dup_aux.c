@@ -4,12 +4,11 @@
 #include <sys/stat.h>
 #include "dup_aux.h"
 
-
 void create_fifo(char *filename)
 {
   if (mkfifo(filename, 0666) == -1)
   {
-    perror("error creating fifo.");
+    perror(filename);
   }
   else
   {
@@ -22,7 +21,7 @@ void open_dup(char *name, int flag, mode_t mode, int dt)
   int fd;
   if ((fd = open(name, flag, mode)) < 0)
   {
-    perror("error");
+    perror(name);
   }
   else
   {
@@ -30,4 +29,19 @@ void open_dup(char *name, int flag, mode_t mode, int dt)
   }
   dup2(fd, dt);
   close(fd);
+}
+
+int check_file_exists(char *name)
+{
+  int fd;
+  if ((fd = open(name, O_RDONLY)) < 0)
+  {
+    perror(name);
+    return 0;
+  }
+  else
+  {
+    close(fd);
+    return 1;
+  }
 }

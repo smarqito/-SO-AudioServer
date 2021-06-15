@@ -44,6 +44,23 @@ void set_filters_folder(Config_Server cs, char *file);
 int has_filter(Config_Server cs, char *filter);
 
 /**
+ * @brief Retorna o número de filtros disponíveis
+ * 
+ * @param cs Configuração do servidor
+ * @return int Número de filtros
+ */
+int get_total_filters(Config_Server cs);
+
+/**
+ * @brief Retorna o caminho para o filtro a aplicar
+ * 
+ * @param cs Configuração do servidor
+ * @param filter Filtro a ser aplicado
+ * @return char* Caminho para o filtro (file)
+ */
+char *get_filter_path(Config_Server cs, char *filter);
+
+/**
  * @brief Retorna o máximo de processos em execução para um determinado filtro
  * 
  * @param cs Configuração do server
@@ -98,6 +115,16 @@ int parseConfigLines(int fd, Config_Server cs);
  * @return char* Nome do ficheiro a ser utilizado no exec
  */
 char *get_filter_file(Config_Server cs, char *filter);
+
+/**
+ * @brief Verifica se um determinado filtro está disponível
+ * 
+ * @param cs Configuração do servidor
+ * @param filter Filtro a verificar
+ * @param need Quantas unidades precisa
+ * @return int 1 se true, 0 caso contrário
+ */
+int is_filter_available(Config_Server cs, char *filter, int need);
 
 /**
  * @brief Mostra o estado da configuração do servidor

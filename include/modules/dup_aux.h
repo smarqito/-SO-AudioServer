@@ -27,4 +27,13 @@ void create_fifo(char *filename);
  */
 void open_dup(char *name, int flag, mode_t mode, int dt);
 
+/**
+ * @brief Verifica se um ficheiro existe
+ * 
+ * @param name path para ficheiro
+ * @return int 0 caso não existe
+ *             1 caso existe
+ */
+int check_file_exists(char *name);
+
 #endif

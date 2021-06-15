@@ -15,14 +15,22 @@ void term_sig(int signal)
   _exit(0);
 }
 
+void term_config_error(int signal) {
+  char config_error[100];
+  sprintf(config_error, "Erro a carregar o ficheiro de configuração. A fechar servidor.\n");
+  write(STDOUT_FILENO, config_error, strlen(config_error));
+  _exit(1);
+}
+
 int main(int argc, char *argv[])
 {
   signal(SIGTERM, term_sig);
+  signal(SIGUSR1, term_config_error);
 
   int fd_c;
   int bytes_read;
   char buffer[BUFFER_SIZE];
-  // create_fifo(CLIENT_PIPE);
+
   if (argc == 3) // execute server
   {
 
@@ -30,7 +38,6 @@ int main(int argc, char *argv[])
 
     if (fork() == 0) // create thread pool
     {
-      open_dup(POOL_PIPE, O_RDONLY, 0666, STDIN_FILENO);
       int status = execl("./pool", "pool", argv[1], argv[2], NULL);
       _exit(status);
     }
@@ -68,7 +75,7 @@ int main(int argc, char *argv[])
   else
   {
     char error[150];
-    sprintf(error, "erro!\nargumentos: aurrasd <config_file> <filters_folder>\n");
+    sprintf(error, "helper:\n> aurrasd <config_file> <filters_folder>\n");
     write(STDOUT_FILENO, error, strlen(error));
   }
 

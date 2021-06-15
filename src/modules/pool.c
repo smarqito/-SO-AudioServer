@@ -10,6 +10,7 @@
 #include "queue.h"
 #include "dup_aux.h"
 #include "config.h"
+#include "exec_helper.h"
 
 typedef struct pool *Pool;
 
@@ -43,21 +44,41 @@ void fork_finished(int signal)
     }
 }
 
+int can_execute(Task t)
+{
+    Config_Server cs = POOL->config;
+    char **filtros = get_task_filter_set(t);
+    int *counter = get_task_filter_counter(t);
+    int num = get_task_filter_size(t);
+    int i;
+    for (i = 0; i < num && is_filter_available(cs, filtros[i], counter[i]); i++)
+        ;
+
+    return i == num;
+}
+
 void load_config(Pool p, char *config_file, char *filters_folder)
 {
     int fd = open(config_file, O_RDONLY);
     if (fd < 0)
     {
         perror("config_file");
+        kill(getppid(), SIGUSR1);
+        _exit(1);
     }
     set_filters_folder(p->config, filters_folder);
     parseConfigLines(fd, p->config);
+}
+
+int has_available_resources(Config_Server cs, Task t)
+{
 }
 
 void handle_pool(Pool pool)
 {
     Task t = get_next_task(pool->queue);
     int pid;
+    int status = 0;
     if (t)
     {
         set_task_status(t, PROCESSING);
@@ -76,10 +97,10 @@ void handle_pool(Pool pool)
             }
             else if (strcmp(type, "transform") == 0)
             {
-                show_task(t);
+                status = exec_full(POOL->config, t);
             }
             kill(getppid(), SIGUSR1);
-            _exit(0);
+            _exit(status);
         default:
             set_task_executer(t, pid);
             break;
@@ -91,14 +112,29 @@ int thread_pool(char *config_file, char *filter_folder)
 {
     POOL = init_pool();
     load_config(POOL, config_file, filter_folder);
+    open_dup(POOL_PIPE, O_RDONLY, 0666, STDIN_FILENO);
+
     char buffer[BUFFER];
     int bytes_read;
-
+    int res;
+    char tmp[100];
     while ((bytes_read = read(STDIN_FILENO, buffer, BUFFER)) > 0)
     {
         buffer[bytes_read] = '\0';
-        add_task(POOL->queue, buffer);
-        handle_pool(POOL);
+        Task t = init_task(buffer);
+        if (t && get_input_file(t))
+        {
+            add_task(POOL->queue, t);
+            handle_pool(POOL);
+        }
+        else
+        {
+            res = open(get_task_pid(t), O_WRONLY);
+            sprintf(tmp, "input ou output não existem!\n");
+
+            write(res, tmp, strlen(tmp));
+            close(res);
+        }
     }
 
     return 0;

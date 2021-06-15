@@ -116,6 +116,15 @@ int has_filter(Config_Server cs, char *filter)
     return 0;
 }
 
+int get_total_filters(Config_Server cs)
+{
+    if (cs)
+    {
+        return cs->total;
+    }
+    return 0;
+}
+
 /**
  * @brief Retorna uma configuração do filtro, caso exista
  * 
@@ -133,6 +142,21 @@ Config get_filter(Config_Server cs, char *filter)
             if (strcmp((list[i])->filter, filter) == 0)
                 return (list[i]);
         }
+    }
+    return NULL;
+}
+
+char *get_filter_path(Config_Server cs, char *filter)
+{
+
+    if (has_filter(cs, filter))
+    {
+        Config conf = get_filter(cs, filter);
+        char *filter_file = conf->file_name;
+        char *folder = get_filters_folder(cs);
+        char *path = malloc(sizeof(char) * (strlen(folder) + strlen(filter_file) + 2));
+        sprintf(path, "%s/%s", folder, filter_file);
+        return path;
     }
     return NULL;
 }
@@ -234,10 +258,15 @@ char *get_filter_file(Config_Server cs, char *filter)
     {
         if (has_filter(cs, filter))
         {
-            return get_filter(cs, filter)->file_name;
+            return strdup(get_filter(cs, filter)->file_name);
         }
     }
     return NULL;
+}
+
+int is_filter_available(Config_Server cs, char *filter, int need)
+{
+    return (get_max_filter(cs, filter) - get_inuse_filter(cs, filter)) >= need;
 }
 
 void show_config(Config c)
