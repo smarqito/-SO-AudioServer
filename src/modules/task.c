@@ -28,6 +28,7 @@ struct task
     char *request;
     char *command;
     char *pid;
+    int executer_pid;
     Status status;
     char *input_file;
     char *output_file;
@@ -107,6 +108,23 @@ Task init_task(char *request)
     return new;
 }
 
+int get_task_executer(Task t)
+{
+    if (t)
+    {
+        return t->executer_pid;
+    }
+    return 0;
+}
+
+void set_task_executer(Task t, int pid)
+{
+    if (t)
+    {
+        t->executer_pid = pid;
+    }
+}
+
 char *get_task_command(Task t)
 {
     if (t)
@@ -168,6 +186,23 @@ char *get_next_filter(Task t)
     }
     return NULL;
 }
+int get_task_total_filters(Task t)
+{
+    if (t)
+    {
+        return t->filters->num_filters;
+    }
+    return 0;
+}
+
+char **get_task_filters(Task t)
+{
+    if (t)
+    {
+        return t->filters->filters;
+    }
+    return NULL;
+}
 
 Status get_task_status(Task t)
 {
@@ -216,7 +251,7 @@ void show_task(Task t)
         case FINISHED:
             sprintf(tmp, " %s", "FINISHED");
             break;
-        
+
         default:
             break;
         }

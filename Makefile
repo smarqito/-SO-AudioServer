@@ -31,11 +31,14 @@ INCLUDES=-I$(ISERVER) -I$(ICLIENT) -I$(IMODULES)
 
 all: server client
 
-server: bin/aurrasd
+server: bin/aurrasd bin/pool
 
 client: bin/aurras
 
-bin/aurrasd: obj/aurrasd.o obj/dup_aux.o obj/readln.o obj/config.o obj/task.o obj/queue.o obj/pool.o
+bin/aurrasd: obj/aurrasd.o obj/dup_aux.o obj/readln.o
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@
+
+bin/pool: obj/pool.o obj/dup_aux.o obj/config.o obj/queue.o obj/readln.o obj/task.o
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@
 
 obj/aurrasd.o: $(SSERVER)/aurrasd.c obj/dup_aux.o obj/readln.o obj/pool.o

@@ -67,7 +67,7 @@ Task get_next_task(Queue q)
             if (ts == PENDING || ts == WAITING)
             {
                 set_task_status(t, PROCESSING);
-                q->current = (i+1) % q->size;
+                q->current = (i + 1) % q->size;
                 q->pending--;
                 return t;
             }
@@ -121,11 +121,26 @@ int get_pid_task(Queue q, int pid, Task *t)
     return -1;
 }
 
+Task get_executer_task(Queue q, int pid)
+{
+    Task t = NULL;
+    for (int i = 0, j = 0; j < q->total && !t; i++)
+    {
+        int executer_pid = get_task_executer(q->tasks[i % q->size]);
+        if (executer_pid == pid)
+        {
+            t = q->tasks[i % q->size];
+            return t;
+        }
+    }
+    return NULL;
+}
+
 int remove_pid_task(Queue q, int pid)
 {
     Task t;
     int i = get_pid_task(q, pid, &t);
-    if (t && get_task_status(t) == FINISHED)
+    if (t)
     {
         q->total--;
         free(q->tasks[i]);

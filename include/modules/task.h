@@ -28,6 +28,10 @@ Task init_task(char *request);
  */
 char *get_task_pid(Task t);
 
+int get_task_executer(Task t);
+
+void set_task_executer(Task t, int pid);
+
 /**
  * @brief Retorna o comando a ser executado: [status, transform]
  * 
@@ -83,6 +87,16 @@ Status get_task_status(Task t);
  * @param status Estado
  */
 void set_task_status(Task t, Status status);
+
+/**
+ * @brief Retorna o total de filtros a serem aplicados
+ * 
+ * @param t 
+ * @return int 
+ */
+int get_task_total_filters(Task t);
+
+char **get_task_filters(Task t);
 
 /**
  * @brief Print da tarefa

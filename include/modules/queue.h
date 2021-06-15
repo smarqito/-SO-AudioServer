@@ -59,6 +59,15 @@ int set_status_task(Queue q, int pid, Status status);
 int get_pid_task(Queue q, int pid, Task *t);
 
 /**
+ * @brief Retorna a tarefa através do pid de quem executou
+ * 
+ * @param q Queue
+ * @param pid Pid de quem executou
+ * @return Task Tarefa encontrada ou NULL
+ */
+Task get_executer_task(Queue q, int pid);
+
+/**
  * @brief Remove uma tarefa a partir do pid
  *        decrementa o total de tarefas
  *        APENAS REMOVE SE A TAREFA TIVER ESTADO FINISHED

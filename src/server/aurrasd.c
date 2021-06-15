@@ -6,8 +6,6 @@
 #include <signal.h>
 #include <string.h>
 #include "dup_aux.h"
-#include "readln.h"
-#include "pool.h"
 
 #define BUFFER_SIZE 4096 // 4 KB
 
