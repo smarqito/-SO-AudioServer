@@ -151,6 +151,15 @@ int remove_pid_task(Queue q, int pid)
     return 0;
 }
 
+int get_pending_tasks(Queue q)
+{
+    if (q)
+    {
+        return q->pending;
+    }
+    return 0;
+}
+
 void show_queue(Queue q)
 {
     if (q)

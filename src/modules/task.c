@@ -151,6 +151,7 @@ Task init_task(char *request)
             break;
         case 1:
             new->command = strdup(token);
+
             break;
         case 2:
             if (!check_file_exists(token))

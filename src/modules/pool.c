@@ -51,8 +51,10 @@ int can_execute(Task t)
     int *counter = get_task_filter_counter(t);
     int num = get_task_filter_size(t);
     int i;
-    printf("numero de filtros: %d\n",num);
+
+    printf("numero de filtros: %d\n", num);
     fflush(NULL);
+
     for (i = 0; i < num && is_filter_available(cs, filtros[i], counter[i]); i++)
         ;
 
@@ -79,37 +81,46 @@ int has_available_resources(Config_Server cs, Task t)
 
 void handle_pool(Pool pool)
 {
-    Task t = get_next_task(pool->queue);
+    Task t; // = get_next_task(pool->queue);
     int pid;
     int status = 0;
-    if (t && can_execute(t))
+    int pending_tasks = get_pending_tasks(POOL->queue);
+    int keep = 0;
+    for (int i = 0; i < pending_tasks && !keep; i++)
     {
-        set_task_status(t, PROCESSING);
-        switch ((pid = fork()))
+        if ((t = get_next_task(pool->queue)) && can_execute(t))
         {
-        case -1:
-            perror("fork error");
-            break;
-        case 0:
-            open_dup(get_task_pid(t), O_WRONLY, 0666, 1);
-            char *type = get_task_command(t);
-            if (strcmp(type, "status") == 0)
+            keep++;
+            set_task_status(t, PROCESSING);
+            switch ((pid = fork()))
             {
-                show_queue(pool->queue);
-                show_config_status(pool->config);
+            case -1:
+                perror("fork error");
+                break;
+            case 0:
+                open_dup(get_task_pid(t), O_WRONLY, 0666, 1);
+                char *type = get_task_command(t);
+                if (strcmp(type, "status") == 0)
+                {
+                    show_queue(pool->queue);
+                    show_config_status(pool->config);
+                }
+                else if (strcmp(type, "transform") == 0)
+                {
+                    status = exec_full(POOL->config, t);
+                }
+                kill(getppid(), SIGUSR1);
+                _exit(status);
+            default:
+                set_task_executer(t, pid);
+                break;
             }
-            else if (strcmp(type, "transform") == 0)
-            {
-                status = exec_full(POOL->config, t);
-            }
-            kill(getppid(), SIGUSR1);
-            _exit(status);
-        default:
-            set_task_executer(t, pid);
-            break;
         }
-    } else {
-        printf("não tenho recursos\n");
+        else
+        {
+            // task passa para waiting
+            set_task_status(t, WAITING);
+        }
     }
 }
 
@@ -127,18 +138,29 @@ int thread_pool(char *config_file, char *filter_folder)
     {
         buffer[bytes_read] = '\0';
         Task t = init_task(buffer);
-        if (t && get_input_file(t))
+        if (t)
         {
-            add_task(POOL->queue, t);
-            handle_pool(POOL);
+            if (strcmp(get_task_command(t), "status") == 0)
+            {
+                add_task(POOL->queue, t);
+                handle_pool(POOL);
+            }
+            else if (get_input_file(t))
+            {
+                add_task(POOL->queue, t);
+                handle_pool(POOL);
+            }
+            else
+            {
+                res = open(get_task_pid(t), O_WRONLY);
+                sprintf(tmp, "input ou output não existem!\n");
+
+                write(res, tmp, strlen(tmp));
+                close(res);
+            }
         }
         else
         {
-            res = open(get_task_pid(t), O_WRONLY);
-            sprintf(tmp, "input ou output não existem!\n");
-
-            write(res, tmp, strlen(tmp));
-            close(res);
         }
     }
 
