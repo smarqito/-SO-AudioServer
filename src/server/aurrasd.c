@@ -3,19 +3,28 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <signal.h>
 #include <string.h>
 #include "dup_aux.h"
 
 #define BUFFER_SIZE 4096 // 4 KB
 
+int POOL_PID;
+
 void term_sig(int signal)
 {
+
+  printf("good bye?\n");
+  fflush(NULL);
+  kill(POOL_PID, SIGUSR2);
+  wait(NULL);
   printf("good bye\n");
   _exit(0);
 }
 
-void term_config_error(int signal) {
+void term_config_error(int signal)
+{
   char config_error[100];
   sprintf(config_error, "Erro a carregar o ficheiro de configuração. A fechar servidor.\n");
   write(STDOUT_FILENO, config_error, strlen(config_error));
@@ -24,7 +33,7 @@ void term_config_error(int signal) {
 
 int main(int argc, char *argv[])
 {
-  signal(SIGTERM, term_sig);
+  signal(SIGINT, term_sig);
   signal(SIGUSR1, term_config_error);
 
   int fd_c;
@@ -36,7 +45,7 @@ int main(int argc, char *argv[])
 
     create_fifo(POOL_PIPE);
 
-    if (fork() == 0) // create thread pool
+    if ((POOL_PID = fork()) == 0) // create thread pool
     {
       int status = execl("./pool", "pool", argv[1], argv[2], NULL);
       _exit(status);

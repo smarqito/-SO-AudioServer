@@ -141,6 +141,15 @@ Task get_executer_task(Queue q, int pid)
     return NULL;
 }
 
+int get_total_tasks(Queue q)
+{
+    if (q)
+    {
+        return q->total;
+    }
+    return 0;
+}
+
 int remove_pid_task(Queue q, int pid)
 {
     Task t;

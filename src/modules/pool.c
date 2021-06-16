@@ -40,9 +40,6 @@ int can_execute(Task t)
     int num = get_task_filter_size(t);
     int i;
 
-    printf("numero de filtros: %d\n", num);
-    fflush(NULL);
-
     for (i = 0; i < num && is_filter_available(cs, filtros[i], counter[i]); i++)
         ;
 
@@ -79,14 +76,10 @@ void release_inuse_filters(Task t)
     char **filters = get_task_filter_set(t);
     int *counter = get_task_filter_counter(t);
     int total = get_task_filter_size(t);
-    printf("a libertar recursos\n");
-    show_task(t);
-    show_config_status(POOL->config);
     for (int i = 0; i < total; i++)
     {
         update_inuse_process_size(POOL->config, filters[i], -counter[i]);
     }
-    show_config_status(POOL->config);
 }
 
 int has_available_resources(Config_Server cs, Task t)
@@ -118,8 +111,11 @@ void handle_pool()
                     char *type = get_task_command(t);
                     if (strcmp(type, "status") == 0)
                     {
+                        char tmp[40];
                         show_queue(POOL->queue);
                         show_config_status(POOL->config);
+                        sprintf(tmp, "pid: %d\n", getppid());
+                        write(STDOUT_FILENO, tmp, strlen(tmp));
                     }
                     else if (strcmp(type, "transform") == 0)
                     {
@@ -185,6 +181,11 @@ int thread_pool(char *config_file, char *filter_folder)
     return 0;
 }
 
+/**
+ * @brief SIGUSR1 handler
+ * 
+ * @param signal signal identifier
+ */
 void fork_finished(int signal)
 {
     int status;
@@ -200,12 +201,34 @@ void fork_finished(int signal)
     }
 }
 
+/**
+ * @brief Gestão de encerramento do servidor
+ * 
+ * @param signal 
+ */
+void close_pool(int signal) {
+    close(STDIN_FILENO); // fecho descritor que mantém thread_pool como listener
+    char resp[100];
+    while (get_total_tasks(POOL->queue) > 0)
+    {
+        handle_pool();
+        pause();
+        sprintf(resp, "Faltam %d tarefas", get_total_tasks(POOL->queue));
+    }
+    _exit(0);
+}
+
 int main(int argc, char *argv[])
 {
     signal(SIGUSR1, fork_finished);
+    signal(SIGUSR2, close_pool);
     if (argc == 3)
     {
         thread_pool(argv[1], argv[2]);
+        return 0;
     }
-    return 0;
+    else
+    {
+        return 1;
+    }
 }
