@@ -11,15 +11,16 @@
 #define BUFFER_SIZE 4096 // 4 KB
 
 int POOL_PID;
+int KEEP_RUN;
 
 void term_sig(int signal)
 {
-
-  printf("good bye?\n");
+  close(KEEP_RUN);
+  printf("[debug] A fechar a pool\n");
   fflush(NULL);
-  kill(POOL_PID, SIGUSR2);
-  wait(NULL);
-  printf("good bye\n");
+  //kill(POOL_PID, SIGUSR2);
+  waitpid(POOL_PID, NULL, 0);
+  printf("[debug] goodbye\n");
   _exit(0);
 }
 
@@ -33,7 +34,7 @@ void term_config_error(int signal)
 
 int main(int argc, char *argv[])
 {
-  signal(SIGINT, term_sig);
+  signal(SIGTERM, term_sig);
   signal(SIGUSR1, term_config_error);
 
   int fd_c;
@@ -59,7 +60,7 @@ int main(int argc, char *argv[])
 
       open_dup(REQUEST_PIPE, O_RDONLY, 0, STDIN_FILENO); // STDIN passa a ser o PIPE
 
-      if ((fd_c = open(REQUEST_PIPE, O_WRONLY)) < 0) // bloqueia o descritor de escrita; servidor sempre a correr
+      if ((KEEP_RUN = open(REQUEST_PIPE, O_WRONLY)) < 0) // bloqueia o descritor de escrita; servidor sempre a correr
       {
         perror("error fifo write");
       }
@@ -75,8 +76,6 @@ int main(int argc, char *argv[])
       {
         buffer[bytes_read - 1] = '\0';
         snprintf(exit_, 4, "%s", buffer);
-        if (strcmp("exit", exit_) == 0)
-          close(fd_c);
         write(STDOUT_FILENO, buffer, bytes_read);
       }
     }

@@ -293,7 +293,7 @@ void fork_finished(int signal)
  */
 void close_pool(int signal)
 {
-    close(STDIN_FILENO); // fecho descritor que mantém thread_pool como listener
+    //close(STDIN_FILENO); // fecho descritor que mantém thread_pool como listener
     char resp[100];
     while (get_total_tasks(POOL->queue) > 0)
     {
@@ -307,7 +307,7 @@ void close_pool(int signal)
 int main(int argc, char *argv[])
 {
     signal(SIGUSR1, fork_finished);
-    signal(SIGUSR2, close_pool);
+    signal(SIGTERM, close_pool);
     if (argc == 3)
     {
         thread_pool(argv[1], argv[2]);
