@@ -1,8 +1,6 @@
 #if !defined(POOL_H)
 #define POOL_H
 
-// maria machado varela - ortopedia
-
 /**
  * @brief 
  * 

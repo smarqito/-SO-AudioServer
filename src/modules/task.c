@@ -29,15 +29,15 @@ typedef struct filters
 
 struct task
 {
-    char *request;
-    char *command;
-    char *pid;
-    int client_fd;
-    ExecuteType execution;
-    int executer_pid;
-    Status status;
-    char *input_file;
-    char *output_file;
+    char *request;         // pedido completo
+    char *command;         // transform vs status
+    char *pid;             // pid do cliente que pediu
+    int client_fd;         // fd to pipe com cliente
+    ExecuteType execution; // tipo de execução (parcial ou completa)
+    int executer_pid;      // pid do filho que está a executar
+    Status status;         // estado do processamento
+    char *input_file;      // path para file input
+    char *output_file;     // path para file output
     Filters filters;
 } TNode;
 

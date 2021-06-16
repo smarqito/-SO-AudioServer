@@ -1,0 +1,320 @@
+\documentclass{article}
+
+% Language setting
+\usepackage[portuguese]{babel}
+
+% Set page size and margins
+\usepackage[a4paper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{minted}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[all]{xy}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\title{Sistemas Operativos}
+\author{Grupo 107 \\ 62608 - Marco Sousa \\ 93271 - José Malheiro}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+    Este projeto permitiu desenvolver competências de \textbf{Engenharia de Software},
+    nomeadamente \textit{gestão de processos e execução concorrente } de programas.
+
+    O objetivo foi implementar um serviço capaz de transformar ficheiros de áudio por aplicação de uma sequência de filtros.
+    Para além deste, permite ainda consultar as tarefas em execução e número de filtros disponíveis e em uso.
+\end{abstract}
+
+\section{Introdução}
+
+O presente relatório foi redigido no âmbito da unidade curricular (UC) \underline{Sistemas Operativos}
+e remete-se à elaboração de um projeto na linguagem de programação C para um \textbf{Serviço de Processamento de Áudio}.
+
+A construção do projeto teve como referência a orientação dos docentes da UC e principal objetivo de desenvolver
+conceitos de gestão de processos, criação de filhos, utilização de sinais, direcionamento de descritores \textit{STDIN, STDOUT, STDERR}.
+Para além destes, permitiu o aprofundamento sobre o desenvolvimento de programas na linguagem C.
+
+\section{Estrutura do Projeto}
+
+A arquitetura utilizada foi uma estratégia modular e encapsulada que permitiu a criação de um sistema cliente-servidor fácil de manter e re-estruturar.
+
+\begin{itemize}
+    \item Client
+          \begin{itemize}
+              \item Processo que permite fazer pedidos ao servidor (cliente);
+          \end{itemize}
+    \item Modules
+          \begin{itemize}
+              \item Módulos de apoio ao desenvolvimento
+              \item Pool
+                    \begin{itemize}
+                        \item Implementação do tipo \textit{thread-pool}
+                    \end{itemize}
+          \end{itemize}
+    \item Server
+          \begin{itemize}
+              \item Processo que recebe os pedidos e encaminha para a pool
+          \end{itemize}
+\end{itemize}
+
+Por forma a verificar a funcionalidade do sistema, é necessário executar o processo servidor com o comando:
+\begin{minted}{bash}
+    > bin/aurrasd <path_to_config> <path_to_filters>
+\end{minted}
+
+Posteriormente, pode ser executado qualquer cliente de forma concorrente, utilizando um dos seguintes comandos:
+\begin{minted}{bash}
+    > bin/aurras status
+    > bin/aurras transform <input_file> <output_file> <filter_1 ... filter_n>
+\end{minted}
+
+\begin{equation*}
+    \xymatrixcolsep{5pc}\xymatrix {
+    Client\ar[r]_{<request>}^{Pipe} & Server\ar[r]_{<request>}^{Pipe} & Pool\ar[r]_{get\_task} &\ar@/_2pc/[d]_{exec\_full}\ar@/^2pc/[d]^{exec\_partial}\\
+    & & & termina\ar@/^3pc/[ulll]^{warns\_client}_{Pipe} \ar@/_6pc/[ul]_{add\_to\_queue}^{signals}
+    }
+\end{equation*}
+
+\subsection{Estruturas de Dados}
+
+As estruturas de dados desenvolvidas para auxiliar na gestão do sistema, foram \textit{Config}, \textit{Pool}, \textit{Queue} e \textit{Task}.
+
+Cada uma destas estruturas Apresenta uma gestão própria, sendo-lhe disponibilizado uma API com funções para inicializar, adicionar,
+remover ou atualizar dados, etc. Estão devidamente documentadas para facilitar a uilização por outros para além do seu programador
+original.
+
+\begin{equation*}
+    \xymatrixcolsep{5pc}\xymatrix {
+    & Pool \\
+    Config\ar@/^/[ur] & & Queue\ar@/_/[ul]\ar[d]_{one\_to\_many} \\
+    & & Task
+    }
+\end{equation*}
+
+\subsubsection{Config}
+
+\begin{minted}{c}
+            typedef struct config *Config;
+            typedef struct config_server *Config_Server;
+            
+            struct config
+            {
+                char *filter;
+                char *file_name;
+                int current, max;
+            } CNode;
+
+            struct config_server
+            {
+                Config *config;
+                char *configFolder;
+                int total;
+                int size;
+            } CSNode;
+
+			\end{minted}
+
+Estrutura utilizada para armazenar e gerir a configuração do servidor, nomeadamente caminho para os filtros,
+filtros disponíveis e respetivo número de instâncias em uso e máximas. Ver \ref{config_api}.
+
+\subsubsection{Task}
+
+\begin{minted}{C}
+        typedef struct task *Task;
+
+        typedef enum taskstatus
+        {
+            PENDING,
+            WAITING,
+            PROCESSING,
+            FINISHED,
+            ERROR
+        } Status;
+
+        typedef enum execute_type
+        {
+            FULL,
+            PARTIAL
+        } ExecuteType;
+
+        typedef struct filters
+        {
+            char **filters; // filtros com a ordem pedida pelo utilizador
+            int size;       // size of array
+            int num_filters;
+            int current_filter;
+            char **filters_set; // set de filtros (sem repetições)
+            int *filters_count; // lista de contadores (relacionado com filtro)
+            int num_filters_set;
+        } * Filters, FNode;
+        struct task
+        {
+            char *request;         // pedido completo
+            char *command;         // transform vs status
+            char *pid;             // pid do cliente que pediu
+            int client_fd;         // fd to pipe com cliente
+            ExecuteType execution; // tipo de execução (parcial ou completa)
+            int executer_pid;      // pid do filho que está a executar
+            Status status;         // estado do processamento
+            char *input_file;      // path para file input
+            char *output_file;     // path para file output
+            Filters filters;
+        } TNode;
+    
+\end{minted}
+
+Cada pedido que o cliente efetua, corresponde a uma tarefa no servidor. Esta tarefa tem um estado próprio,
+que permite fazer a sua gestão. Ver \ref{task_api}
+
+\begin{itemize}
+    \item [comunicar com cliente] {pid do cliente\\ descritor para pipe}
+    \item [execução do comando] {filtros associados, por ordem \\ pid do filho a executar comando \\ tipo de execução (parcial ou completa)
+          estado de processamento \\ caminho para input \\ caminho para output}
+    \item [gestão da execução] { filtro em execução (execução parcial)}
+    \item [API] {adicionar filtros \\ obter número de filtros \\ obter próximo filtro a executar \\ obter filtro em execução
+          set de filtros (sem repetições) \\ set de contador de instâncias necessárias}
+\end{itemize}
+
+Assim, quando uma tarefa é iniciada, recebe como argumento o \textit{request} realizado pelo cliente, com a
+seguinte estrutura:
+\begin{minted}{bash}
+    $ <pid_cliente> <transform> <input_file> <output_file> <filtros>
+    $ <pid_cliente> <status>
+\end{minted}
+
+A partir desta string, é extraída toda a informação necessária através do seu parsing, conforme descrito.
+É ainda verificado se o ficheiro de input efetivamente existe. Caso não exista, a tarefa não é adiciona à queue
+e é apresentado uma mensagem de erro no cliente, assim como fechado o seu descritor de escrita do pipe.
+
+Para facilitar a gestão, foi criado duas estruturas do tipo \mint{C}{enum}, nomeadamente para saber qual o estado de processamento
+da tarefa e qual o tipo de execução.
+
+Em relação a este último, salienta-se a sua importância pois o sistema desenvolvido permite dois tipos de excução: quando
+o servidor tem recursos suficientes para executar de uma só vez (através de uma \textit{pipeline}) - execução completa
+ou quando tal não é possível, aplica um filtro de cada vez. Neste caso, é criado um ficheiro temporário para ser utilizado
+na iteração seguinte.
+
+\subsubsection{Queue}
+
+\begin{minted}{C}
+            struct queue
+            {
+                Task *tasks;
+                int current;
+                int pending;
+                int total;
+                int size;
+            } NQueue;
+            typedef struct queue *Queue;
+\end{minted}
+
+O conceito inicial \textbf{Queue} seria uma estratégia do tipo FCFS (\textit{First Come First Served}).
+No entanto, ao longo da realização do trabalho, tal como descrito na literatura, esta estratégia não é, de todo, eficiente.
+Este tópico será discutido na secção \ref{pool}.
+
+Através desta estrutura, é possível ter conhecimento de quantas tarefas estão pendentes, total (em precessamento e pendentes) e
+tarefa atual. Com a utilização da API, ver \ref{queue_api}, é possível fazer a gestão da lista de espera através de funções
+para adicionar, atualizar, remover e obter tarefas.
+
+\subsubsection{Pool} \label{pool}
+
+O módulo \textbf{Pool} serve como um controlador. Permite fazer a gestão dos processos que o cliente pede, desde a
+criação de \textit{tasks}, verificação se são válidas e adição à \textit{queue} até à execução de processos de forma concorrente.
+
+\begin{minted}{C}
+    static Pool POOL;
+
+    struct pool
+    {
+        Queue queue;
+        Config_Server config;
+    } PNode;
+\end{minted}
+
+Como já abordado, a abordagem inicial seria uma estratégia do tipo FCFS. No entanto, devido ao entusiasmo e vontade de desenvolver uma solução
+mais completa, verificou-se que tal estratégia não seria compatível. Pelo menos de uma forma eficiente.
+
+Assim, utiliza-se uma variação da estratégia FCFS, i.e. o servidor tenta executar uma tarefa assim que esta uma nova é recebida.
+Se a for a sua vez, tenta executar.
+Caso não tenha recursos, procura a tarefa seguinte que seja possível executar com os recursos disponíveis.
+Caso não seja possível executar mais nenhuma tarefa,
+volta para o \textit{read} e aguarda por mais tarefas ou que sejam libertados recursos.
+
+\begin{equation*}
+    \xymatrixcolsep{4pc}\xymatrix{
+    & Pool\ar[l]_{close\_descriptor}\ar[r]^{remove\_task}\ar@(ur, ul)_{set\_waiting} & \\
+    & & \\
+    Read\ar[r]_{request} & init\_task\ar@/_3pc/[l]_{task\_invalida}\ar[r]_{task\_valida} & add\_to\_queue\ar[d]^{handle\_pool} \\
+    & & handle\_pool\ar@/^1pc/[d]^{get\_next\_task}\ar@/^4pc/[dd] \\
+    finaliza task\ar@/_3pc/[uuuur]_{signal}^{release\_resources} & multiplos\_forks+dup2+exec\ar[l] & execucao\_completa\ar[l] \\
+    finaliza\_vs\_temporario\ar@/_4pc/[uuuuur] & aplica\_filtro\ar[l] & execucao\_parcial\ar[l]_{get\_next\_filter} \\
+    }
+\end{equation*}
+
+Através da estratégia utilizada, permite a execução, quer de pedidos que o servidor seja capaz de resolver de uma só vez (mesmo que esperando)
+pela sua disponibilidade, quer aqueles que nunca seria capaz e causaria \textit{starving} caso tentasse executar.
+
+De forma sucinta:
+\begin{itemize}
+    \item Recebe uma request
+    \item Processa e cria uma \textit{task}
+    \item Verifica se a task é válida (caso não seja, responde ao cliente)
+    \item Adiciona a task à queue
+    \item Tenta executar a próxima task na queue
+    \item Possível:
+          \begin{itemize}
+              \item Verifica o tipo de excução (parcial ou total)
+              \item Executa e ocupa os recursos necessários
+              \item A execução é feita criando filhos para Tal
+              \item Quando estes terminam, enviam sinal ao pai a informar o seu término
+              \item O pai (pool) recebe a interrupção e verifica quem terminou
+              \item Vai à \textit{queue} verificar de que task se trata
+              \item Verifica se terminou a query ou ainda há mais para processar
+              \item Coloca query como waiting no último caso
+              \item Remove-a da \textit{queue} no primeiro
+              \item Liberta os recursos que a mesma estava a utilizar
+              \item Volta para o \textit{handle\_pool}
+          \end{itemize}
+    \item Não possível
+          \begin{itemize}
+              \item Volta para o modo bloqueado a aguardar novas tasks OU interrupção de processos que terminaram e vão libertar recursos
+          \end{itemize}
+\end{itemize}
+
+\subsection{Client}
+
+
+\subsection{Server}
+
+\section{Considerações Finais}
+
+Através da construção do \textbf{SGR}, foi possível adquidir competências que se encontravam alheias ao nosso conhecimento e desenvolver outras que, apesar de já terem sido estudadas a nível teórico, ainda não tinham sido implementadas.
+
+As principais dificuldades, foram a arquitetura da aplicação, o encapsulamento e a construção do interpretador. As duas primeiras, foram ultrapassadas utilizando os métodos explicados pela equipa docente, nomeadamente a arquitetura \textbf{MVC}. Quanto ao interpretador foi, provavelmente, o maior desafio pois procurou-se, numa fase inicial, desenvolver uma estratégia sem utilização de \mintinline{C}{switch}. Para tal, tentou-se criar um objeto que armazenasse a informação relativa à execução de cada query e, posteriormente, utilizá-lo para executar as funções e efetuar \textit{parsing} dos argumentos. No entanto, foi atingido um tamanho de complexidade para o qual não estavamos preparados, mediante o tempo disponível para a realização deste projeto.
+
+A otimização dos algoritmos foi efetuada tendo por base os conceitos adquiridos em outras disciplinas, como \textbf{Algoritmos e Complexidade} e \textbf{Arquitetura de Computadores}. Desta forma, foi priviligiado a análise algoritmica em prol do tempo de execução, sendo que este último varia consideravelmente entre computadores, devido à arquitetura que o próprio utiliza, nomeadamente estratégias de paralelismo e vetorização.
+
+\section{Anexos}
+
+\subsection{Config API} \label{config_api}
+
+\inputminted{C}{../include/modules/config.h}
+
+\subsection{Task API} \label{task_api}
+
+\inputminted{C}{../include/modules/task.h}
+
+\subsection{Queue API} \label{queue_api}
+
+\inputminted{C}{../include/modules/queue.h}
+
+\subsection{Pool API} \label{pool_api}
+
+\inputminted{C}{../include/modules/pool.h}
+
+
+\end{document}
