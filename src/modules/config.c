@@ -284,7 +284,9 @@ void show_config(Config c)
 {
     if (c)
     {
-        printf("%s %s: %d/%d (current/max)\n", c->filter, c->file_name, c->current, c->max);
+        char tmp[150];
+        sprintf(tmp, "%s %s: %d/%d (current/max)\n", c->filter, c->file_name, c->current, c->max);
+        write(STDOUT_FILENO, tmp, strlen(tmp));
     }
 }
 
