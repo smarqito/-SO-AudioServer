@@ -80,6 +80,21 @@ Task get_executer_task(Queue q, int pid);
 int remove_pid_task(Queue q, int pid);
 
 /**
+ * @brief Retorna o número de tarefas pendentes
+ * 
+ * @param q Queue
+ * @return int Tarefas pendentes
+ */
+int get_pending_tasks(Queue q);
+
+/**
+ * @brief Incrementa o número de tarefas pendentes
+ * 
+ * @param q Queue
+ */
+void add_pending_tasks(Queue q);
+
+/**
  * @brief Apresenta a queue
  * 
  * @param q Queue a ser apresentada

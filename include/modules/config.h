@@ -79,6 +79,16 @@ int get_max_filter(Config_Server cs, char *filter);
 int add_inuse_process(Config_Server cs, char *filter);
 
 /**
+ * @brief Adiciona uma nova instância em execução
+ * 
+ * @param cs Configuração do servidor
+ * @param filter Filtro
+ * @param number Número de instâncias que vão ser utilizadas
+ * @return int 1 caso num processos em excução < maximo permitido
+ */
+int update_inuse_process_size(Config_Server cs, char *filter, int number);
+
+/**
  * @brief Retorna o número de processos que estão em execução para um determinado filtro
  * 
  * @param cs Configração do servidor

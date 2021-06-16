@@ -32,18 +32,6 @@ Pool init_pool()
     return new;
 }
 
-void fork_finished(int signal)
-{
-    int status;
-    int pid = wait(&status);
-    if (WEXITSTATUS(status) == 0)
-    {
-        pid = atoi(get_task_pid(get_executer_task(POOL->queue, pid)));
-        set_status_task(POOL->queue, pid, FINISHED);
-        remove_pid_task(POOL->queue, pid);
-    }
-}
-
 int can_execute(Task t)
 {
     Config_Server cs = POOL->config;
@@ -74,12 +62,39 @@ void load_config(Pool p, char *config_file, char *filters_folder)
     parseConfigLines(fd, p->config);
 }
 
+void set_inuse_filters(Task t)
+{
+    char **filters = get_task_filter_set(t);
+    int *counter = get_task_filter_counter(t);
+    int total = get_task_filter_size(t);
+
+    for (int i = 0; i < total; i++)
+    {
+        update_inuse_process_size(POOL->config, filters[i], counter[i]);
+    }
+}
+
+void release_inuse_filters(Task t)
+{
+    char **filters = get_task_filter_set(t);
+    int *counter = get_task_filter_counter(t);
+    int total = get_task_filter_size(t);
+    printf("a libertar recursos\n");
+    show_task(t);
+    show_config_status(POOL->config);
+    for (int i = 0; i < total; i++)
+    {
+        update_inuse_process_size(POOL->config, filters[i], -counter[i]);
+    }
+    show_config_status(POOL->config);
+}
+
 int has_available_resources(Config_Server cs, Task t)
 {
     return 1;
 }
 
-void handle_pool(Pool pool)
+void handle_pool()
 {
     Task t; // = get_next_task(pool->queue);
     int pid;
@@ -88,38 +103,41 @@ void handle_pool(Pool pool)
     int keep = 0;
     for (int i = 0; i < pending_tasks && !keep; i++)
     {
-        if ((t = get_next_task(pool->queue)) && can_execute(t))
+        if ((t = get_next_task(POOL->queue)))
         {
-            keep++;
-            set_task_status(t, PROCESSING);
-            switch ((pid = fork()))
+            if (can_execute(t))
             {
-            case -1:
-                perror("fork error");
-                break;
-            case 0:
-                open_dup(get_task_pid(t), O_WRONLY, 0666, 1);
-                char *type = get_task_command(t);
-                if (strcmp(type, "status") == 0)
+                keep++;
+                switch ((pid = fork()))
                 {
-                    show_queue(pool->queue);
-                    show_config_status(pool->config);
+                case -1:
+                    perror("fork error");
+                    break;
+                case 0:
+                    open_dup(get_task_pid(t), O_WRONLY, 0666, 1);
+                    char *type = get_task_command(t);
+                    if (strcmp(type, "status") == 0)
+                    {
+                        show_queue(POOL->queue);
+                        show_config_status(POOL->config);
+                    }
+                    else if (strcmp(type, "transform") == 0)
+                    {
+                        status = exec_full(POOL->config, t);
+                    }
+                    kill(getppid(), SIGUSR1);
+                    _exit(status);
+                default:
+                    set_inuse_filters(t);
+                    set_task_executer(t, pid);
+                    break;
                 }
-                else if (strcmp(type, "transform") == 0)
-                {
-                    status = exec_full(POOL->config, t);
-                }
-                kill(getppid(), SIGUSR1);
-                _exit(status);
-            default:
-                set_task_executer(t, pid);
-                break;
             }
-        }
-        else
-        {
-            // task passa para waiting
-            set_task_status(t, WAITING);
+            else
+            {
+                set_task_status(t, WAITING);
+                add_pending_tasks(POOL->queue);
+            }
         }
     }
 }
@@ -143,12 +161,12 @@ int thread_pool(char *config_file, char *filter_folder)
             if (strcmp(get_task_command(t), "status") == 0)
             {
                 add_task(POOL->queue, t);
-                handle_pool(POOL);
+                handle_pool();
             }
             else if (get_input_file(t))
             {
                 add_task(POOL->queue, t);
-                handle_pool(POOL);
+                handle_pool();
             }
             else
             {
@@ -165,6 +183,21 @@ int thread_pool(char *config_file, char *filter_folder)
     }
 
     return 0;
+}
+
+void fork_finished(int signal)
+{
+    int status;
+    int pid = wait(&status);
+    if (WEXITSTATUS(status) == 0)
+    {
+        Task t = get_executer_task(POOL->queue, pid);
+        pid = atoi(get_task_pid(t));
+        release_inuse_filters(t);
+        set_status_task(POOL->queue, pid, FINISHED);
+        remove_pid_task(POOL->queue, pid);
+        handle_pool();
+    }
 }
 
 int main(int argc, char *argv[])

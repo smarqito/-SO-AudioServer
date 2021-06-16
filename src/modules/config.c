@@ -137,7 +137,7 @@ Config get_filter(Config_Server cs, char *filter)
     if (cs)
     {
         Config *list = cs->config;
-        for (int i = 0; i < cs->size; i++)
+        for (int i = 0; i < cs->total; i++)
         {
             if (strcmp((list[i])->filter, filter) == 0)
                 return (list[i]);
@@ -181,6 +181,17 @@ int add_inuse_process(Config_Server cs, char *filter)
             use->current++;
             return 1;
         }
+    }
+    return 0;
+}
+
+int update_inuse_process_size(Config_Server cs, char *filter, int number)
+{
+    Config c = get_filter(cs, filter);
+    if (c)
+    {
+        c->current += number;
+        return 1;
     }
     return 0;
 }
@@ -300,7 +311,8 @@ void show_config_status(Config_Server cs)
 // {
 //     int config;
 //     Config_Server cs = init_config_server();
-//     int k ;
+//     set_filters_folder(cs, "teste");
+//     int k;
 //     if ((config = open("aurrasd.conf", O_RDONLY)) < 0)
 //     {
 //         perror("config file");
@@ -314,10 +326,17 @@ void show_config_status(Config_Server cs)
 //         show_config(cs->config[i]);
 //     }
 //     add_inuse_process(cs, "alto");
-//     printf("alto in use: %d\n", get_current_filter(cs, "alto"));
+//     printf("alto in use: %d\n", get_inuse_filter(cs, "alto"));
 //     add_inuse_process(cs, "alto");
-//     printf("alto in use: %d\n", get_current_filter(cs, "alto"));
+//     printf("alto in use: %d\n", get_inuse_filter(cs, "alto"));
 //     add_inuse_process(cs, "alto");
-//     printf("alto in use: %d\n", get_current_filter(cs, "alto"));
+//     printf("alto in use: %d\n", get_inuse_filter(cs, "alto"));
+//     update_inuse_process_size(cs, "alto", 3);
+//     show_config_status(cs);
+//     printf("alto in use: %d\n", get_inuse_filter(cs, "alto"));
+//     printf("is alto available: %d\n", is_filter_available(cs, "alto", 1));
+    
+//     update_inuse_process_size(cs, "alto", -3);
+//     printf("alto in use: %d\n", get_inuse_filter(cs, "alto"));
 //     return 0;
 // }

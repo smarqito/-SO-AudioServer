@@ -61,16 +61,20 @@ Task get_next_task(Queue q)
 {
     if (q && q->pending != 0)
     {
-        for (int i = q->current, j = 0; j < q->total; i = (i + 1) % q->size, j++)
+        for (int i = q->current, j = 0, k = 0; j < q->total; i = (i + 1) % q->size, k++)
         {
             Task t = q->tasks[i];
-            Status ts = get_task_status(t);
-            if (ts == PENDING || ts == WAITING)
+            if (t)
             {
-                set_task_status(t, PROCESSING);
-                q->current = (i + 1) % q->size;
-                q->pending--;
-                return t;
+                k++;
+                Status ts = get_task_status(t);
+                if (ts == PENDING || ts == WAITING)
+                {
+                    set_task_status(t, PROCESSING);
+                    q->current = (i + 1) % q->size;
+                    q->pending--;
+                    return t;
+                }
             }
         }
     }
@@ -158,6 +162,14 @@ int get_pending_tasks(Queue q)
         return q->pending;
     }
     return 0;
+}
+
+void add_pending_tasks(Queue q)
+{
+    if (q)
+    {
+        q->pending++;
+    }
 }
 
 void show_queue(Queue q)
