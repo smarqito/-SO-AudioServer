@@ -37,7 +37,6 @@ int main(int argc, char *argv[])
   signal(SIGTERM, term_sig);
   signal(SIGUSR1, term_config_error);
 
-  int fd_c;
   int bytes_read;
   char buffer[BUFFER_SIZE];
 
@@ -48,7 +47,7 @@ int main(int argc, char *argv[])
 
     if ((POOL_PID = fork()) == 0) // create thread pool
     {
-      int status = execl("./pool", "pool", argv[1], argv[2], NULL);
+      int status = execl("bin/pool", "pool", argv[1], argv[2], NULL);
       _exit(status);
     }
     else
@@ -71,11 +70,8 @@ int main(int argc, char *argv[])
 
       open_dup(POOL_PIPE, O_WRONLY, 0666, STDOUT_FILENO);
 
-      char exit_[5];
       while ((bytes_read = read(STDIN_FILENO, buffer, BUFFER_SIZE)) > 0)
       {
-        buffer[bytes_read - 1] = '\0';
-        snprintf(exit_, 4, "%s", buffer);
         write(STDOUT_FILENO, buffer, bytes_read);
       }
     }

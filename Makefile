@@ -72,9 +72,10 @@ obj/exec_helper.o: $(SMODULES)/exec_helper.c $(IMODULES)/exec_helper.h obj/task.
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	rm obj/* tmp/* bin/{aurras,aurrasd}
+	rm obj/* tmp/* bin/{aurras,aurrasd,pool}
 
 test:
 	bin/aurras
 	bin/aurras status
 	bin/aurras transform samples/samples-1.m4a output.m4a alto eco rapido
+	bin/aurras transform samples/sample-1-so.m4a output.m4a alto eco rapido

@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/signal.h>
 #include <string.h>
 #include "aurras.h"
 #include "dup_aux.h"
@@ -11,8 +12,18 @@
 
 #define BUFFER_SIZE 4096
 
+char self_pid[10];
+
+void handle_term(int status)
+{
+  unlink(self_pid);
+  _exit(status);
+}
+
 int main(int argc, char *argv[])
 {
+  signal(SIGINT, handle_term);
+  signal(SIGTERM, handle_term);
   if (argc > 1)
   {
     int fd, bytes_read;

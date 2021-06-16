@@ -98,20 +98,20 @@ int exec_partial(Config_Server cs, Task t)
     if (i == 0)
     {
         open_dup(get_input_file(t), O_RDONLY, 0666, STDIN_FILENO);
-        sprintf(tmp_file, "../tmp/%s_%d.tmp", pid, i);
+        sprintf(tmp_file, "tmp/%s_%d.tmp", pid, i);
         open_dup(tmp_file, O_CREAT | O_TRUNC | O_WRONLY, 0666, STDOUT_FILENO);
     }
     else if (i == (N - 1))
     {
-        sprintf(tmp_file, "../tmp/%s_%d.tmp", pid, i - 1);
+        sprintf(tmp_file, "tmp/%s_%d.tmp", pid, i - 1);
         open_dup(tmp_file, O_RDONLY, 0666, STDIN_FILENO);
         open_dup(get_output_file(t), O_CREAT | O_TRUNC | O_WRONLY, 0666, STDOUT_FILENO);
     }
     else
     {
-        sprintf(tmp_file, "../tmp/%s_%d.tmp", pid, i);
+        sprintf(tmp_file, "tmp/%s_%d.tmp", pid, i);
         open_dup(tmp_file, O_CREAT | O_TRUNC | O_WRONLY, 0666, STDOUT_FILENO);
-        sprintf(tmp_file, "../tmp/%s_%d.tmp", pid, i - 1);
+        sprintf(tmp_file, "tmp/%s_%d.tmp", pid, i - 1);
         open_dup(tmp_file, O_RDONLY, 0666, STDIN_FILENO);
     }
     if (fork() == 0)
