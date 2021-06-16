@@ -10,6 +10,8 @@ SDIR=src
 IDIR=include
 BDIR=bin
 
+MKDIR_P = mkdir -p
+
 # includes do servidor
 ISERVER=$(IDIR)/server
 
@@ -29,11 +31,14 @@ SCLIENT=$(SDIR)/client
 
 INCLUDES=-I$(ISERVER) -I$(ICLIENT) -I$(IMODULES)
 
-all: server client
+all: directories server client
 
 server: bin/aurrasd bin/pool
 
 client: bin/aurras
+
+directories: 
+	$(MKDIR_P) obj tmp samples
 
 bin/aurrasd: obj/aurrasd.o obj/dup_aux.o obj/readln.o
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@

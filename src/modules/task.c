@@ -319,6 +319,7 @@ int get_task_client_fd(Task t)
     {
         return t->client_fd;
     }
+    return 0;
 }
 
 char **get_task_filters(Task t)
