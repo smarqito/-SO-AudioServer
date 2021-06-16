@@ -77,7 +77,7 @@ obj/exec_helper.o: $(SMODULES)/exec_helper.c $(IMODULES)/exec_helper.h obj/task.
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	rm obj/* tmp/* bin/{aurras,aurrasd,pool}
+	rm obj/* tmp/* bin/aurras bin/aurrasd bin/pool
 
 test:
 	bin/aurras
