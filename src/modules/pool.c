@@ -96,7 +96,7 @@ void full_execution(Task t)
         perror("fork error");
         break;
     case 0:
-        open_dup(get_task_pid(t), O_WRONLY, 0666, 1);
+        dup2(get_task_client_fd(t), STDOUT_FILENO);
         char *type = get_task_command(t);
         if (strcmp(type, "status") == 0)
         {
@@ -119,8 +119,25 @@ void full_execution(Task t)
     }
 }
 
-void partial_execution (Task t){
-    
+void partial_execution(Task t, char *filter)
+{
+    int pid, status = 0;
+    switch ((pid = fork()))
+    {
+    case -1:
+        perror("fork error");
+        break;
+    case 0:
+        dup2(get_task_client_fd(t), STDOUT_FILENO);
+        status = exec_partial(POOL->config, t);
+        kill(getppid(), SIGUSR1);
+        _exit(status);
+    default:
+        increment_filter(t);
+        update_inuse_process_size(POOL->config, filter, 1);
+        set_task_executer(t, pid);
+        break;
+    }
 }
 
 void handle_pool()
@@ -128,6 +145,7 @@ void handle_pool()
     Task t; // = get_next_task(pool->queue);
     int pending_tasks = get_pending_tasks(POOL->queue);
     int keep = 0;
+    char *filter;
     for (int i = 0; i < pending_tasks && !keep; i++)
     {
         if ((t = get_next_task(POOL->queue)))
@@ -145,9 +163,19 @@ void handle_pool()
                     set_task_status(t, WAITING);
                     add_pending_tasks(POOL->queue);
                 }
-
                 break;
             case PARTIAL:
+                get_current_filter(t, &filter);
+                if (is_filter_available(POOL->config, filter, 1))
+                {
+                    keep++;
+                    partial_execution(t, filter);
+                }
+                else
+                {
+                    set_task_status(t, WAITING);
+                    add_pending_tasks(POOL->queue);
+                }
                 break;
             }
         }
@@ -192,6 +220,7 @@ int thread_pool(char *config_file, char *filter_folder)
             if (strcmp(get_task_command(t), "status") == 0 || get_input_file(t))
             {
                 set_type_of_execution(t);
+                open_task_client_fd(t);
                 add_task(POOL->queue, t);
                 handle_pool();
             }
@@ -218,15 +247,41 @@ int thread_pool(char *config_file, char *filter_folder)
  */
 void fork_finished(int signal)
 {
-    int status;
+    int status, i;
     int pid = wait(&status);
+    char *filter;
     if (WEXITSTATUS(status) == 0)
     {
         Task t = get_executer_task(POOL->queue, pid);
         pid = atoi(get_task_pid(t));
-        release_inuse_filters(t);
-        set_status_task(POOL->queue, pid, FINISHED);
-        remove_pid_task(POOL->queue, pid);
+        switch (get_task_execution_type(t))
+        {
+        case FULL:
+            release_inuse_filters(t);
+            set_status_task(POOL->queue, pid, FINISHED);
+            remove_pid_task(POOL->queue, pid);
+            close(get_task_client_fd(t));
+            break;
+        case PARTIAL:
+            i = get_previous_filter(t, &filter);
+            if (i >= 0)
+            {
+                if (i < (get_task_total_filters(t) - 1))
+                {
+                    set_status_task(POOL->queue, pid, WAITING);
+                }
+                else
+                {
+                    set_status_task(POOL->queue, pid, FINISHED);
+                    remove_pid_task(POOL->queue, pid);
+                    close(get_task_client_fd(t));
+                }
+                update_inuse_process_size(POOL->config, filter, -1);
+            }
+            break;
+        default:
+            break;
+        }
         handle_pool();
     }
 }

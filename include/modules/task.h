@@ -127,6 +127,22 @@ int get_current_filter(Task t, char **current);
 int get_next_filter(Task t, char **next);
 
 /**
+ * @brief Get the previous filter object
+ * 
+ * @param t 
+ * @param next 
+ * @return int 
+ */
+int get_previous_filter(Task t, char **next);
+
+/**
+ * @brief Incrementa o apontador para o próximo filtro
+ * 
+ * @param t 
+ */
+void increment_filter(Task t);
+
+/**
  * @brief Retorna o estado de uma tarefa
  * 
  * @param t Tarefa
@@ -149,6 +165,22 @@ void set_task_status(Task t, Status status);
  * @return int 
  */
 int get_task_total_filters(Task t);
+
+/**
+ * @brief Abre o descritor para o fifo do cliente
+ * 
+ * @param t 
+ */
+void open_task_client_fd(Task t);
+
+/**
+ * @brief Get the task client fd
+ * 
+ * @param t 
+ * @return int 
+ */
+int get_task_client_fd(Task t);
+
 
 char **get_task_filters(Task t);
 

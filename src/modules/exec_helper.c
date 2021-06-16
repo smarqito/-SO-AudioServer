@@ -44,12 +44,12 @@ int exec_full(Config_Server cs, Task t)
                 switch (fork())
                 {
                 case 0:
-                    dup2(p[i-1][0], STDIN_FILENO);                                                     // direciono leitura para pipe
+                    dup2(p[i - 1][0], STDIN_FILENO);                                                 // direciono leitura para pipe
                     open_dup(get_output_file(t), O_CREAT | O_TRUNC | O_WRONLY, 0666, STDOUT_FILENO); // direciono escrita para ficheiro
                     status = execl(get_filter_path(cs, filter), get_filter_file(cs, filter), NULL);
                     _exit(status);
                 default:
-                    close(p[i-1][0]);
+                    close(p[i - 1][0]);
                     break;
                 }
             }
@@ -86,7 +86,44 @@ int exec_full(Config_Server cs, Task t)
 
 int exec_partial(Config_Server cs, Task t)
 {
-    open_dup("exemplo2.mp3", O_CREAT | O_TRUNC | O_WRONLY, 0666, STDOUT_FILENO);
-    printf("cenascenascenas\n");
+    char *filter;
+    int i = get_next_filter(t, &filter);
+    int N = get_task_total_filters(t);
+    char tmp_file[1024];
+    char *pid = get_task_pid(t);
+    char resp[100];
+    sprintf(resp, "Processing filter #%d: %s\n", i, filter);
+    write(STDOUT_FILENO, resp, strlen(resp));
+
+    if (i == 0)
+    {
+        open_dup(get_input_file(t), O_RDONLY, 0666, STDIN_FILENO);
+        sprintf(tmp_file, "../tmp/%s_%d.tmp", pid, i);
+        open_dup(tmp_file, O_CREAT | O_TRUNC | O_WRONLY, 0666, STDOUT_FILENO);
+    }
+    else if (i == (N - 1))
+    {
+        sprintf(tmp_file, "../tmp/%s_%d.tmp", pid, i - 1);
+        open_dup(tmp_file, O_RDONLY, 0666, STDIN_FILENO);
+        open_dup(get_output_file(t), O_CREAT | O_TRUNC | O_WRONLY, 0666, STDOUT_FILENO);
+    }
+    else
+    {
+        sprintf(tmp_file, "../tmp/%s_%d.tmp", pid, i);
+        open_dup(tmp_file, O_CREAT | O_TRUNC | O_WRONLY, 0666, STDOUT_FILENO);
+        sprintf(tmp_file, "../tmp/%s_%d.tmp", pid, i - 1);
+        open_dup(tmp_file, O_RDONLY, 0666, STDIN_FILENO);
+    }
+    if (fork() == 0)
+    {
+        execl(get_filter_path(cs, filter), get_filter_file(cs, filter), NULL);
+        _exit(0);
+    }
+
+    wait(NULL);
+    if (i > 0)
+    {
+        unlink(tmp_file);
+    }
     return 0;
 }

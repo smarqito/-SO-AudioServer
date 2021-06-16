@@ -32,6 +32,7 @@ struct task
     char *request;
     char *command;
     char *pid;
+    int client_fd;
     ExecuteType execution;
     int executer_pid;
     Status status;
@@ -271,6 +272,30 @@ int get_next_filter(Task t, char **next)
     }
     return -1;
 }
+
+int get_previous_filter(Task t, char **next)
+{
+    if (t)
+    {
+        Filters f = t->filters;
+        if ((f->current_filter - 1) >= 0)
+        {
+            (*next) = strdup(f->filters[f->current_filter - 1]);
+            return f->current_filter - 1;
+        }
+    }
+    return -1;
+}
+
+void increment_filter(Task t)
+{
+    if (t)
+    {
+        Filters f = t->filters;
+        f->current_filter++;
+    }
+}
+
 int get_task_total_filters(Task t)
 {
     if (t)
@@ -278,6 +303,22 @@ int get_task_total_filters(Task t)
         return t->filters->num_filters;
     }
     return 0;
+}
+
+void open_task_client_fd(Task t)
+{
+    if (t)
+    {
+        t->client_fd = open(t->pid, O_WRONLY);
+    }
+}
+
+int get_task_client_fd(Task t)
+{
+    if (t)
+    {
+        return t->client_fd;
+    }
 }
 
 char **get_task_filters(Task t)
