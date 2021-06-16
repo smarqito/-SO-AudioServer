@@ -87,55 +87,90 @@ int has_available_resources(Config_Server cs, Task t)
     return 1;
 }
 
+void full_execution(Task t)
+{
+    int pid, status = 0;
+    switch ((pid = fork()))
+    {
+    case -1:
+        perror("fork error");
+        break;
+    case 0:
+        open_dup(get_task_pid(t), O_WRONLY, 0666, 1);
+        char *type = get_task_command(t);
+        if (strcmp(type, "status") == 0)
+        {
+            char tmp[40];
+            show_queue(POOL->queue);
+            show_config_status(POOL->config);
+            sprintf(tmp, "pid: %d\n", getppid());
+            write(STDOUT_FILENO, tmp, strlen(tmp));
+        }
+        else if (strcmp(type, "transform") == 0)
+        {
+            status = exec_full(POOL->config, t);
+        }
+        kill(getppid(), SIGUSR1);
+        _exit(status);
+    default:
+        set_inuse_filters(t);
+        set_task_executer(t, pid);
+        break;
+    }
+}
+
+void partial_execution (Task t){
+    
+}
+
 void handle_pool()
 {
     Task t; // = get_next_task(pool->queue);
-    int pid;
-    int status = 0;
     int pending_tasks = get_pending_tasks(POOL->queue);
     int keep = 0;
     for (int i = 0; i < pending_tasks && !keep; i++)
     {
         if ((t = get_next_task(POOL->queue)))
         {
-            if (can_execute(t))
+            switch (get_task_execution_type(t))
             {
-                keep++;
-                switch ((pid = fork()))
+            case FULL:
+                if (can_execute(t))
                 {
-                case -1:
-                    perror("fork error");
-                    break;
-                case 0:
-                    open_dup(get_task_pid(t), O_WRONLY, 0666, 1);
-                    char *type = get_task_command(t);
-                    if (strcmp(type, "status") == 0)
-                    {
-                        char tmp[40];
-                        show_queue(POOL->queue);
-                        show_config_status(POOL->config);
-                        sprintf(tmp, "pid: %d\n", getppid());
-                        write(STDOUT_FILENO, tmp, strlen(tmp));
-                    }
-                    else if (strcmp(type, "transform") == 0)
-                    {
-                        status = exec_full(POOL->config, t);
-                    }
-                    kill(getppid(), SIGUSR1);
-                    _exit(status);
-                default:
-                    set_inuse_filters(t);
-                    set_task_executer(t, pid);
-                    break;
+                    keep++;
+                    full_execution(t);
                 }
-            }
-            else
-            {
-                set_task_status(t, WAITING);
-                add_pending_tasks(POOL->queue);
+                else
+                {
+                    set_task_status(t, WAITING);
+                    add_pending_tasks(POOL->queue);
+                }
+
+                break;
+            case PARTIAL:
+                break;
             }
         }
     }
+}
+
+int set_type_of_execution(Task t)
+{
+    char **filters = get_task_filter_set(t);
+    int *counter = get_task_filter_counter(t);
+    int total = get_task_filter_size(t);
+
+    for (int i = 0; i < total; i++)
+    {
+        if (get_max_filter(POOL->config, filters[i]) < counter[i])
+        {
+            set_task_execution_type(t, PARTIAL);
+            return 0;
+        }
+    }
+    set_task_execution_type(t, FULL);
+
+    return 1;
 }
 
 int thread_pool(char *config_file, char *filter_folder)
@@ -154,21 +189,16 @@ int thread_pool(char *config_file, char *filter_folder)
         Task t = init_task(buffer);
         if (t)
         {
-            if (strcmp(get_task_command(t), "status") == 0)
+            if (strcmp(get_task_command(t), "status") == 0 || get_input_file(t))
             {
-                add_task(POOL->queue, t);
-                handle_pool();
-            }
-            else if (get_input_file(t))
-            {
+                set_type_of_execution(t);
                 add_task(POOL->queue, t);
                 handle_pool();
             }
             else
             {
                 res = open(get_task_pid(t), O_WRONLY);
-                sprintf(tmp, "input ou output não existem!\n");
-
+                sprintf(tmp, "input não existe!\n");
                 write(res, tmp, strlen(tmp));
                 close(res);
             }
@@ -206,7 +236,8 @@ void fork_finished(int signal)
  * 
  * @param signal 
  */
-void close_pool(int signal) {
+void close_pool(int signal)
+{
     close(STDIN_FILENO); // fecho descritor que mantém thread_pool como listener
     char resp[100];
     while (get_total_tasks(POOL->queue) > 0)

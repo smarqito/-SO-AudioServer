@@ -88,6 +88,14 @@ int remove_pid_task(Queue q, int pid);
 int get_pending_tasks(Queue q);
 
 /**
+ * @brief Retorna o total de tarefas ainda na queue (seja em que estado for)
+ * 
+ * @param q Queue
+ * @return int Total
+ */
+int get_total_tasks(Queue q);
+
+/**
  * @brief Incrementa o número de tarefas pendentes
  * 
  * @param q Queue

@@ -12,6 +12,12 @@ typedef enum taskstatus
     ERROR
 } Status;
 
+typedef enum execute_type
+{
+    FULL,
+    PARTIAL
+} ExecuteType;
+
 /**
  * @brief Inicializa uma tarefa
  * 
@@ -52,6 +58,28 @@ int get_task_filter_size(Task t);
  */
 char *get_task_pid(Task t);
 
+/**
+ * @brief Retorna o tipo de execução da tarefa
+ * 
+ * @param t Tarefa
+ * @return ExecuteType Tipo de execução
+ */
+ExecuteType get_task_execution_type(Task t);
+
+/**
+ * @brief Define o tipo de execução da tarefa
+ * 
+ * @param t Tarefa
+ * @param type Tipo de execução
+ */
+void set_task_execution_type(Task t, ExecuteType type);
+
+/**
+ * @brief Retorna o pid do filho que está a executar a tarefa
+ * 
+ * @param t Task
+ * @return int Pid do filho a executar
+ */
 int get_task_executer(Task t);
 
 void set_task_executer(Task t, int pid);
@@ -90,7 +118,7 @@ char *get_output_file(Task t);
 int get_current_filter(Task t, char **current);
 
 /**
- * @brief Retorna o próximo filtro a processar (igual ao atual mas incrementa)
+ * @brief Retorna o próximo filtro a processar (igual ao current mas incrementa)
  * 
  * @param t Tarefa
  * @param next Onde vai ser armazenado o próximo filtro a executar

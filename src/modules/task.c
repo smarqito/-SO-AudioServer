@@ -32,6 +32,7 @@ struct task
     char *request;
     char *command;
     char *pid;
+    ExecuteType execution;
     int executer_pid;
     Status status;
     char *input_file;
@@ -175,6 +176,19 @@ Task init_task(char *request)
     set_task_filter_counter(new->filters);
 
     return new;
+}
+
+ExecuteType get_task_execution_type(Task t)
+{
+    return t->execution;
+}
+
+void set_task_execution_type(Task t, ExecuteType type)
+{
+    if (t)
+    {
+        t->execution = type;
+    }
 }
 
 int get_task_executer(Task t)
