@@ -10,10 +10,10 @@ void create_fifo(char *filename)
   {
     perror(filename);
   }
-  else
-  {
-    printf("[debug] fifo %s file created\n", filename);
-  }
+  // else
+  // {
+  //   printf("[debug] fifo %s file created\n", filename);
+  // }
 }
 
 void open_dup(char *name, int flag, mode_t mode, int dt)
@@ -23,10 +23,10 @@ void open_dup(char *name, int flag, mode_t mode, int dt)
   {
     perror(name);
   }
-  else
-  {
-    printf("[debug] opened file %s\n", name);
-  }
+  // else
+  // {
+  //   printf("[debug] opened file %s\n", name);
+  // }
   dup2(fd, dt);
   close(fd);
 }

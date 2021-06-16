@@ -37,10 +37,6 @@ int main(int argc, char *argv[])
     {
       perror("error fifo write");
     }
-    else
-    {
-      printf("[debug] fifo file opened for writing\n");
-    }
 
     strcat(buffer, self_pid);
     strcat(buffer, " ");
