@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[11pt]{article}
 
 % Language setting
 \usepackage[portuguese]{babel}
@@ -72,6 +72,8 @@ Posteriormente, pode ser executado qualquer cliente de forma concorrente, utiliz
     > bin/aurras transform <input_file> <output_file> <filter_1 ... filter_n>
 \end{minted}
 
+Para gerar os executáveis, deverá executar-se na \textit{bash} o comando \mintinline{bash}{make}.
+
 \begin{equation*}
     \xymatrixcolsep{5pc}\xymatrix {
     Client\ar[r]_{<request>}^{Pipe} & Server\ar[r]_{<request>}^{Pipe} & Pool\ar[r]_{get\_task} &\ar@/_2pc/[d]_{exec\_full}\ar@/^2pc/[d]^{exec\_partial}\\
@@ -95,7 +97,7 @@ original.
     }
 \end{equation*}
 
-\subsubsection{Config}
+\subsubsection{Config} \label{config}
 
 \begin{minted}{c}
             typedef struct config *Config;
@@ -121,7 +123,7 @@ original.
 Estrutura utilizada para armazenar e gerir a configuração do servidor, nomeadamente caminho para os filtros,
 filtros disponíveis e respetivo número de instâncias em uso e máximas. Ver \ref{config_api}.
 
-\subsubsection{Task}
+\subsubsection{Task}\label{task}
 
 \begin{minted}{C}
         typedef struct task *Task;
@@ -198,7 +200,7 @@ o servidor tem recursos suficientes para executar de uma só vez (através de um
 ou quando tal não é possível, aplica um filtro de cada vez. Neste caso, é criado um ficheiro temporário para ser utilizado
 na iteração seguinte.
 
-\subsubsection{Queue}
+\subsubsection{Queue} \label{queue}
 
 \begin{minted}{C}
             struct queue
@@ -220,6 +222,14 @@ Através desta estrutura, é possível ter conhecimento de quantas tarefas estã
 tarefa atual. Com a utilização da API, ver \ref{queue_api}, é possível fazer a gestão da lista de espera através de funções
 para adicionar, atualizar, remover e obter tarefas.
 
+\subsubsection{Exec Helper}\label{exec_helper}
+
+Com apenas duas funções, esta API permite a execução total ou parcial de uma tarefa.
+
+É utilizada pela Pool (ver \ref{pool}) para apoio na execução de tarefas pendentes, mediante o tipo de execução associada (\textit{PARTIAL vs FULL}).
+
+Para mais informação, ver API \ref{exec_helper_api}.
+
 \subsubsection{Pool} \label{pool}
 
 O módulo \textbf{Pool} serve como um controlador. Permite fazer a gestão dos processos que o cliente pede, desde a
@@ -238,9 +248,9 @@ criação de \textit{tasks}, verificação se são válidas e adição à \texti
 Como já abordado, a abordagem inicial seria uma estratégia do tipo FCFS. No entanto, devido ao entusiasmo e vontade de desenvolver uma solução
 mais completa, verificou-se que tal estratégia não seria compatível. Pelo menos de uma forma eficiente.
 
-Assim, utiliza-se uma variação da estratégia FCFS, i.e. o servidor tenta executar uma tarefa assim que esta uma nova é recebida.
-Se a for a sua vez, tenta executar.
-Caso não tenha recursos, procura a tarefa seguinte que seja possível executar com os recursos disponíveis.
+Assim, utiliza-se uma variação da estratégia FCFS, i.e. o servidor tenta executar uma tarefa assim que uma nova é recebida.
+Se for a sua vez, tenta executá-la.
+Caso não tenha recursos, procura a tarefa seguinte que seja possível de executar com os recursos disponíveis.
 Caso não seja possível executar mais nenhuma tarefa,
 volta para o \textit{read} e aguarda por mais tarefas ou que sejam libertados recursos.
 
@@ -256,7 +266,7 @@ volta para o \textit{read} e aguarda por mais tarefas ou que sejam libertados re
 \end{equation*}
 
 Através da estratégia utilizada, permite a execução, quer de pedidos que o servidor seja capaz de resolver de uma só vez (mesmo que esperando)
-pela sua disponibilidade, quer aqueles que nunca seria capaz e causaria \textit{starving} caso tentasse executar.
+pela sua disponibilidade, quer aqueles que nunca seria capaz e causaria \textit{starving} caso entrasse na queue.
 
 De forma sucinta:
 \begin{itemize}
@@ -269,7 +279,7 @@ De forma sucinta:
           \begin{itemize}
               \item Verifica o tipo de excução (parcial ou total)
               \item Executa e ocupa os recursos necessários
-              \item A execução é feita criando filhos para Tal
+              \item A execução é feita criando filhos para tal. ver \ref{exec_helper}
               \item Quando estes terminam, enviam sinal ao pai a informar o seu término
               \item O pai (pool) recebe a interrupção e verifica quem terminou
               \item Vai à \textit{queue} verificar de que task se trata
@@ -281,22 +291,144 @@ De forma sucinta:
           \end{itemize}
     \item Não possível
           \begin{itemize}
-              \item Volta para o modo bloqueado a aguardar novas tasks OU interrupção de processos que terminaram e vão libertar recursos
+              \item Volta para o modo bloqueado (\textit{read}) a aguardar novas tasks OU interrupção de processos que terminaram e vão libertar recursos
           \end{itemize}
 \end{itemize}
 
-\subsection{Client}
+\subsection{Client - Aurras} \label{aurras}
 
+A forma de efetuar pedidos ao servidor é através de um \textit{Cliente} com as seguintes funcionalidades:
 
-\subsection{Server}
+\begin{itemize}
+    \item [Ficheiro FIFO] {PID\\
+          Criado pipe com nome do PID do cliente\\
+          Pipe que será utilizado para receber estado de processamento do pedido\\
+          Abertura do extremo de leitura, ficando a aguardar em espera passiva}
+    \item [Comunicação Server] {SERVER\_REQUEST\\
+          Abertura de extremo de escrita do pipe de comunicação com servidor\\
+          Utilizado para fazer o pedido}
+    \item [Gestão de sinais] {\textit{SIGINT} e \textit{SIGTERM}\\
+          É utilizado a função \textbf{handle\_term} por forma a garantir que o ficheiro pipe gerado, é apagado aquando
+          do término da execução do cliente. Mesmo que o término seja forçado.}
+    \item[Helper] {Caso a execução seja efetuada sem argumentos, imprime no ecrã o formato de pedidos aceite}
+\end{itemize}
+
+Posto isto, o cliente recebe o pedido sob a forma de argumentos (na chamada da bash), podendo ser do tipo:
+\begin{minted}{bash}
+    > aurras status
+    > aurras transform <input_file> <output_file> <filter_1> ... <filter_n>
+\end{minted}
+
+O primeiro, irá apresentar o estado do servidor, nomeadamente quais as tarefas com estado WAITING, PENDING, PROCESSING, o número de instâncias em uso
+e número máximo das mesmas e o PID do servidor (ponto de entrada dos pedidos). Formato:
+\begin{minted}{bash}
+$ bin/aurras status
+Task #1: status  PROCESSING
+path filtros: bin/aurrasd-filters
+alto aurrasd-gain-double: 0/2 (current/max)
+baixo aurrasd-gain-half: 0/2 (current/max)
+eco aurrasd-echo: 0/2 (current/max)
+rapido aurrasd-tempo-double: 0/2 (current/max)
+lento aurrasd-tempo-half: 0/2 (current/max)
+pid: 1729
+\end{minted}
+
+O segundo tipo, irá aplicar uma série de filtros pedidos ao input e armazenar o resultado no output:
+\begin{minted}{bash}
+$ bin/aurras transform samples/sample-1-so.m4a output_cenas.mp3 alto baixo
+Processing 2 filters
+Terminated
+\end{minted}
+
+Conforme já abordado, o sistema desenvolvido permite a aplicação de filtros mesmo que o número de filtros exceda o limite de instâncias. Tal acontece através
+da criação de ficheiros temporários:
+\begin{minted}{bash}
+$ bin/aurras transform samples/sample-1-so.m4a output_cenas.mp3 alto baixo eco eco eco
+Processing filter #1: alto
+Processing filter #2: baixo
+Processing filter #3: eco
+Processing filter #4: eco
+Processing filter #5: eco
+\end{minted}
+
+Os ficheiros temporários gerados são eliminados assim que deixam de ser necessários.
+Notavelmente, é uma solução menos eficiente pois implica persistência em disco entre cada aplicação de filtro.
+
+\subsection{Server - aurrasd} \label{aurrasd}
+
+Efetua a inicialização do servidor, criando todos os recursos necessários para a gestão de pedidos, a saber:
+\begin{itemize}
+    \item[POOL\_PIPE] {Cria um pipe com nome para comunicação com a instância pool\\
+          Efetuado fork()\\
+          Filho executar a pool (instância que faz a gestão dos pedidos)}
+    \item[comuniação cliente] {REQUEST\_SERVER\\
+          Cria o ficheiro fifo que aceita os pedidos de execução dos clientes\\
+          Abre, ainda, o extremo de escrita do pipe, por forma a ficar aberto durante toda a execução do servidor, garantindo uma espera passiva}
+    \item[read] {Fica em espera passiva por escritas no pipe de comunicação com o cliente-servidor}
+\end{itemize}
+
+A inicialização do processo \textit{aurrasd} compreende ao seguinte comando:
+\begin{minted}{bash}
+    > aurrasd <config_file> <filters_folder>
+\end{minted}
+
+\begin{itemize}
+    \item[config\_file]{$\langle nome\_filtro\rangle \langle ficheiro\_filtro\rangle \langle max\_instancias \rangle $ \\
+          cada linha deve ter a estrutura indicada\\
+          É carregado na configuração do servidor. Ver \ref{config}}
+    \item[filters\_folder] {path para pasta com os filtros\\
+          cada filtro tem um ficheiro associado que deve estar no caminho indicado}
+\end{itemize}
+
+Caso se tente executar o servidor sem os argumentos necessários (seja a mais ou a menos), é retornada uma mensagem de erro
+e o mesmo é terminado.
+
+\begin{minted}{bash}
+$ bin/aurrasd op1
+helper:
+> aurrasd <config_file> <filters_folder>
+
+$ bin/aurrasd op1 op2 op3
+helper:
+> aurrasd <config_file> <filters_folder>
+\end{minted}
 
 \section{Considerações Finais}
 
-Através da construção do \textbf{SGR}, foi possível adquidir competências que se encontravam alheias ao nosso conhecimento e desenvolver outras que, apesar de já terem sido estudadas a nível teórico, ainda não tinham sido implementadas.
+Através da construção do \textbf{Serviço de Processamento de Áudio}, foi possível fortalecer conceitos desenvolvidos
+ao longo da unidade curricular (UC) \textbf{Sistemas Operativos}.
+Não obstante, foi também importante todo o conhecimento adquirido ao longo do curso de \textbf{Engenharia Informática},
+nomeadamente estruturas de dados e modularidade.
 
-As principais dificuldades, foram a arquitetura da aplicação, o encapsulamento e a construção do interpretador. As duas primeiras, foram ultrapassadas utilizando os métodos explicados pela equipa docente, nomeadamente a arquitetura \textbf{MVC}. Quanto ao interpretador foi, provavelmente, o maior desafio pois procurou-se, numa fase inicial, desenvolver uma estratégia sem utilização de \mintinline{C}{switch}. Para tal, tentou-se criar um objeto que armazenasse a informação relativa à execução de cada query e, posteriormente, utilizá-lo para executar as funções e efetuar \textit{parsing} dos argumentos. No entanto, foi atingido um tamanho de complexidade para o qual não estavamos preparados, mediante o tempo disponível para a realização deste projeto.
+A principal dificuldade durante a realização do \textbf{Serviço} foi a arquitetura da aplicação, definir a forma de comunicação
+entre cliente e servidor e gestão dos processos em execução, pendentes, em espera.
+Depois de se conseguir definir a estratégia, a sua implementação foi relativamente linear, sem grandes dificuldades.
 
-A otimização dos algoritmos foi efetuada tendo por base os conceitos adquiridos em outras disciplinas, como \textbf{Algoritmos e Complexidade} e \textbf{Arquitetura de Computadores}. Desta forma, foi priviligiado a análise algoritmica em prol do tempo de execução, sendo que este último varia consideravelmente entre computadores, devido à arquitetura que o próprio utiliza, nomeadamente estratégias de paralelismo e vetorização.
+No entanto, a aplicação desenvolvida apresenta algumas limitações, sejam elas:
+\begin{itemize}
+    \item[sinais concorrentes] {limite da fila de espera de sinais concorrentes\\
+          pode levar a comportamento errático \\
+          não aconteceu durante os testes executados}
+    \item[máximo de tarefas] {o máximo de tarefas na queue, encontra-se limitada a 100\\
+          no entanto, esta limitação é facilmente ultrapassável\\
+          bastaria implementar uma queue com tamanho dinâmico, em vez de estático }
+    \item[término 'elegante'] {garantir que, quando o servidor recebe um sinal do tipo \textit{SIGTERM} permite as
+          tarefas pendentes terminarem, não aceitando mais\\
+          Foi implementada uma solução que não foi possível fazer debug, apesar de, conceptualmente, ser funcional}
+\end{itemize}
+
+Apesar destas limitações, a solução desenvolvida encontra-se funcional e utilizou-se os conceitos alvo da UC em estudo, seja:
+\begin{itemize}
+    \item Fila de espera
+    \item Utilização de esperas passivas
+    \item Criação de filhos
+    \item Direcionamento de descritores
+    \item Gestão de processos
+    \item Processos concorrentes
+    \item \dots
+\end{itemize}
+
+Desta forma, acredita-se que se atingiu os objetivos da UC de forma satisfatória.
 
 \section{Anexos}
 
@@ -312,9 +444,16 @@ A otimização dos algoritmos foi efetuada tendo por base os conceitos adquirido
 
 \inputminted{C}{../include/modules/queue.h}
 
+\subsection{Exec Helper API} \label{exec_helper_api}
+
+\inputminted{C}{../include/modules/exec_helper.h}
+
 \subsection{Pool API} \label{pool_api}
 
 \inputminted{C}{../include/modules/pool.h}
 
+\subsection{Client API} \label{client_api}
+
+\inputminted{C}{../src/client/aurras.c}
 
 \end{document}

@@ -92,7 +92,7 @@ int exec_partial(Config_Server cs, Task t)
     char tmp_file[1024];
     char *pid = get_task_pid(t);
     char resp[100];
-    sprintf(resp, "Processing filter #%d: %s\n", i, filter);
+    sprintf(resp, "Processing filter #%d: %s\n", i + 1, filter);
     write(STDOUT_FILENO, resp, strlen(resp));
 
     if (i == 0)
@@ -114,6 +114,7 @@ int exec_partial(Config_Server cs, Task t)
         sprintf(tmp_file, "tmp/%s_%d.tmp", pid, i - 1);
         open_dup(tmp_file, O_RDONLY, 0666, STDIN_FILENO);
     }
+    
     if (fork() == 0)
     {
         execl(get_filter_path(cs, filter), get_filter_file(cs, filter), NULL);
@@ -124,6 +125,11 @@ int exec_partial(Config_Server cs, Task t)
     if (i > 0)
     {
         unlink(tmp_file);
+    }
+    if (i == (N - 1))
+    {
+        sprintf(resp, "Terminated\n");
+        write(STDOUT_FILENO, resp, strlen(resp));
     }
     return 0;
 }

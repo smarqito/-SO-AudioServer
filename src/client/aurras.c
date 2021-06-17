@@ -62,8 +62,8 @@ int main(int argc, char *argv[])
   else
   {
     printf("helper:\n");
-    printf("./aurras status\n");
-    printf("./aurras transform <input_file> <output_file> <filter_1> ... <filter_n>\n");
+    printf("aurras status\n");
+    printf("aurras transform <input_file> <output_file> <filter_1> ... <filter_n>\n");
     fflush(NULL);
   }
 
