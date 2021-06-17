@@ -308,6 +308,7 @@ int main(int argc, char *argv[])
 {
     signal(SIGUSR1, fork_finished);
     signal(SIGTERM, close_pool);
+    signal(SIGINT, close_pool);
     if (argc == 3)
     {
         thread_pool(argv[1], argv[2]);

@@ -15,7 +15,8 @@ int KEEP_RUN;
 
 void term_sig(int signal)
 {
-  //close(KEEP_RUN);
+  unlink(REQUEST_PIPE);
+  unlink(POOL_PIPE);
   printf("[debug] A fechar a pool\n");
   fflush(NULL);
   //kill(POOL_PID, SIGUSR2);
@@ -35,6 +36,7 @@ void term_config_error(int signal)
 int main(int argc, char *argv[])
 {
   signal(SIGTERM, term_sig);
+  signal(SIGINT, term_sig);
   signal(SIGUSR1, term_config_error);
 
   int bytes_read;
